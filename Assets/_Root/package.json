@@ -1,0 +1,25 @@
+{
+  "name": "com.pancake.ui",
+  "displayName": "UI",
+  "description": "Better Ui collection",
+  "version": "1.0.0",
+  "unity": "2019.1",
+  "category": "pancake",
+  "author": {
+    "name": "yenmoc",
+    "email": "phongsoyenmoc.diep@gmail.com",
+    "url": "https://github.com/yenmoc"
+  },
+  "license": "MIT",
+  "keywords": [ "ui" ],
+  "dependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:pancake-llc/ui.git",
+    "directory": "com.pancake.ui"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@pancake"
+  }
+}
