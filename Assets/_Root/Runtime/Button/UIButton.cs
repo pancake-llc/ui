@@ -59,10 +59,27 @@ namespace Pancake.UI
 
         #region Implementation of IButton
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor only
+        /// </summary>
+        public TweenPlayer TweenUp { get => tweenUp; set => tweenUp = value; }
+
+        /// <summary>
+        /// Editor only
+        /// </summary>
+        public TweenPlayer TweenDown { get => tweenDown; set => tweenDown = value; }
+
+        /// <summary>
+        /// Editor only
+        /// </summary>
+        public bool IsMotion { get => isMotion; set => isMotion = value; }
+#endif
+
         /// <summary>
         /// is release only set true when OnPointerUp called
         /// </summary>
-        private bool IsRelease { get; set; }
+        private bool IsRelease { get; set; } = true;
 
         /// <summary>
         /// make sure OnPointerClick is called on the condition of IsRelease, only set true when OnPointerExit called
@@ -92,11 +109,12 @@ namespace Pancake.UI
                 tweenDown.onForwardArrived += OnCompletePhaseDown;
             }
 
-            if (tweenUp != null) 
+            if (tweenUp != null)
             {
                 tweenUp.enabled = false;
                 tweenUp.onForwardArrived += OnCompletePhaseUp;
             }
+
             CalculateTween();
         }
 
@@ -148,7 +166,7 @@ namespace Pancake.UI
             IsRelease = false;
             IsPrevent = false;
             if (clickType == EButtonClickType.LongClick && interactable) RegisterLongClick();
-            
+
             RunMotionPointerDown();
         }
 
@@ -156,9 +174,9 @@ namespace Pancake.UI
         {
             if (IsRelease) return;
             base.OnPointerUp(eventData);
+            IsRelease = true;
             onPointerUp.Invoke();
             if (clickType == EButtonClickType.LongClick) CancelLongClick();
-            IsRelease = true;
 
             RunMotionPointerUp();
         }
@@ -418,7 +436,7 @@ namespace Pancake.UI
 
         public void CalculateTween()
         {
-            if (tweenDown == null || tweenUp == null || tweenDown.isActiveAndEnabled || tweenUp.isActiveAndEnabled) return;
+            if (tweenDown == null || tweenUp == null || tweenDown.isActiveAndEnabled || tweenUp.isActiveAndEnabled || AffectObject == null) return;
             DefaultScale = AffectObject.localScale;
             var tweenScaleDown = tweenDown.GetAnimation<TweenTransformScale>();
             var tweenScaleUp = tweenUp.GetAnimation<TweenTransformScale>();
@@ -445,7 +463,7 @@ namespace Pancake.UI
                         tweenScaleUp.maxNormalizedTime = 1;
                         break;
                 }
-                
+
                 if (!Application.isPlaying)
                 {
                     tweenScaleDown.from = AffectObject != null ? AffectObject.localScale : DefaultScale;
@@ -485,7 +503,7 @@ namespace Pancake.UI
                         tweenScaleUp.maxNormalizedTime = 1;
                         break;
                 }
-                
+
                 if (!Application.isPlaying)
                 {
                     tweenScaleDown.from = AffectObject != null ? AffectObject.localScale : DefaultScale;
@@ -503,16 +521,10 @@ namespace Pancake.UI
                 tweenScaleUp.from = _endValue;
             }
         }
-        
-        private void OnCompletePhaseDown()
-        {
 
-        }
+        private void OnCompletePhaseDown() { }
 
-        private void OnCompletePhaseUp()
-        {
-            
-        }
+        private void OnCompletePhaseUp() { }
 
         #endregion
 

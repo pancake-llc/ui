@@ -7,9 +7,9 @@ namespace Pancake.UI.Editor
 {
     [CustomEditor(typeof(UIButton), true)]
     [CanEditMultipleObjects]
-    public class UniButtonEditor : UnityEditor.UI.ButtonEditor
+    public class UIButtonEditor : UnityEditor.UI.ButtonEditor
     {
-        private const int DEFAULT_LABEL_WIDTH = 110;
+        protected const int DEFAULT_LABEL_WIDTH = 110;
         protected static readonly string[] ButtonMotion = {"Immediate", "Normal", "Uniform", "Late"};
         public static readonly string[] ButtonTypeClick = {"OnlySingleClick", "OnlyDoubleClick", "LongClick", "Instant", "Delayed"};
         private SerializedProperty _isMotion;
@@ -219,11 +219,10 @@ namespace Pancake.UI.Editor
 
                     Uniform.SpaceOneLine();
                 }
-                
+
                 if ((UIButton) target is var btn && !Application.isPlaying) btn.CalculateTween();
             }
-            
-            
+
 
             switch ((EButtonClickType) _clickType.enumValueIndex)
             {
@@ -238,6 +237,9 @@ namespace Pancake.UI.Editor
             }
 
             EditorGUILayout.PropertyField(_onPointerUp);
+            Uniform.HelpBox(
+                "In case you move the mouse pointer away from the button while holding down the OnPointerUp event is still called. So be careful when using it",
+                MessageType.Info);
 
             EditorGUILayout.Space();
             Repaint();
