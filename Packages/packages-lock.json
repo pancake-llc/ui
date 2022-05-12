@@ -8,13 +8,13 @@
       "hash": "33d32baea4d50040e0601b725a694dcf3dcf6640"
     },
     "com.pancake.common": {
-      "version": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.1.8",
+      "version": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.2.1",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.1"
       },
-      "hash": "4797aba57abf1e9ff367961c6346474c61063bd7"
+      "hash": "5f1243d9d1ce12899836cfce707222a4be13f1fd"
     },
     "com.pancake.tween": {
       "version": "https://github.com/pancake-llc/tween.git?path=Assets/_Root#1.3.7",
@@ -31,7 +31,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.13",
+      "version": "3.0.14",
       "depth": 0,
       "source": "registry",
       "dependencies": {
