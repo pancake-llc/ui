@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace AnKuchen.Map
+namespace Pancake.UIQuery
 {
     public interface IMapper
     {

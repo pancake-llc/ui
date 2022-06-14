@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.Editor
+namespace Pancake.UIQuery.Editor
 {
     [CreateAssetMenu(menuName = "AnKuchen/CopyTemplateSettings", fileName = "AnKuchenCopyTemplateSettings")]
     public class AnKuchenCopyTemplateSettings : ScriptableObject

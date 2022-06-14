@@ -1,4 +1,4 @@
-namespace AnKuchen
+namespace Pancake.UIQuery
 {
     public static class FastHash
     {

@@ -1,4 +1,4 @@
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
     public interface IReadonlyMargin
     {

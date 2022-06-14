@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
     public interface IKuchenList : IMappedObjectList
     {

@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.Extensions
+namespace Pancake.UIQuery
 {
     public static class MapperExtensionsBatch
     {

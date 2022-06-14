@@ -1,17 +1,13 @@
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.KuchenLayout.Layouter
+namespace Pancake.UIQuery
 {
     public class RightToLeftLayouter : ILayouter
     {
         private readonly float margin;
 
-        public RightToLeftLayouter(float margin = 0f)
-        {
-            this.margin = margin;
-        }
+        public RightToLeftLayouter(float margin = 0f) { this.margin = margin; }
 
         public RightToLeftLayouter(HorizontalLayoutGroup layout)
         {

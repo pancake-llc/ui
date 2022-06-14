@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
 <# for (var t = 1; t <= 4; ++t) { #>
     public class HorizontalList<<#= string.Join(", ", Enumerable.Range(1, t).Select(i => $"T{i}")) #>> : IKuchenList

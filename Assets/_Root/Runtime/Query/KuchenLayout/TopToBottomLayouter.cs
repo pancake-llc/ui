@@ -1,17 +1,13 @@
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.KuchenLayout.Layouter
+namespace Pancake.UIQuery
 {
     public class TopToBottomLayouter : ILayouter
     {
         private readonly float margin;
 
-        public TopToBottomLayouter(float margin)
-        {
-            this.margin = margin;
-        }
+        public TopToBottomLayouter(float margin) { this.margin = margin; }
 
         public TopToBottomLayouter(VerticalLayoutGroup layout)
         {

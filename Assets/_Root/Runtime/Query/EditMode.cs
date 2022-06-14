@@ -1,4 +1,4 @@
-namespace AnKuchen
+namespace Pancake.UIQuery
 {
     public enum EditMode
     {

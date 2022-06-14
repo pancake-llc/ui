@@ -1,8 +1,7 @@
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.KuchenLayout.Layouter
+namespace Pancake.UIQuery
 {
     public class BottomToTopLayouter : ILayouter
     {

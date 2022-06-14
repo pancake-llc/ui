@@ -1,4 +1,4 @@
-namespace AnKuchen.Map
+namespace Pancake.UIQuery
 {
     public interface IMappedObjectList
     {

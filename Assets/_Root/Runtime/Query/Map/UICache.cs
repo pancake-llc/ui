@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AnKuchen.Map
+namespace Pancake.UIQuery
 {
     public class UICache : MonoBehaviour, IMapper
     {

@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-namespace AnKuchen.Editor
+namespace Pancake.UIQuery.Editor
 {
     public static class UIElementTester
     {

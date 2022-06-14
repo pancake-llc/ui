@@ -1,7 +1,6 @@
-using AnKuchen.Map;
 using UnityEngine;
 
-namespace AnKuchen.Extensions
+namespace Pancake.UIQuery
 {
     public static class MapperExtensionsDuplicate
     {

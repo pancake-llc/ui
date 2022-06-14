@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using AnKuchen.Map;
 using UnityEditor;
-using UnityEditor.Experimental.SceneManagement;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace AnKuchen.Editor
+namespace Pancake.UIQuery.Editor
 {
     [CustomEditor(typeof(UICache))]
     public class UICacheEditor : UnityEditor.Editor

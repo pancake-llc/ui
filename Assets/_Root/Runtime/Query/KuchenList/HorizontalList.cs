@@ -1,80 +1,66 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
-using AnKuchen.AdditionalInfo;
-using AnKuchen.Extensions;
-using AnKuchen.Map;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
-    public class HorizontalList<T1> : IKuchenList
-        where T1 : IMappedObject, new()
+    public class HorizontalList<T1> : IKuchenList where T1 : IMappedObject, new()
     {
-        private readonly ScrollRect scrollRect;
-        private readonly T1 original1;
-        private readonly (string Name, float Size)[] originalInfoCache;
-        private List<UIFactory<T1>> contents = new List<UIFactory<T1>>();
-        private readonly List<(float, float)> contentPositions = new List<(float, float)>();
-        private readonly Dictionary<int, IMappedObject> createdObjects = new Dictionary<int, IMappedObject>();
-        private readonly Dictionary<Type, List<IMappedObject>> cachedObjects = new Dictionary<Type, List<IMappedObject>>();
-        private readonly RectTransform viewportRectTransformCache;
-        private readonly ListAdditionalInfo additionalInfo;
+        private readonly ScrollRect _scrollRect;
+        private readonly T1 _original1;
+        private readonly (string Name, float Size)[] _originalInfoCache;
+        private List<UIFactory<T1>> _contents = new List<UIFactory<T1>>();
+        private readonly List<(float, float)> _contentPositions = new List<(float, float)>();
+        private readonly Dictionary<int, IMappedObject> _createdObjects = new Dictionary<int, IMappedObject>();
+        private readonly Dictionary<Type, List<IMappedObject>> _cachedObjects = new Dictionary<Type, List<IMappedObject>>();
+        private readonly RectTransform _viewportRectTransformCache;
+        private readonly ListAdditionalInfo _additionalInfo;
         public float Spacing { get; private set; }
         public int SpareElement { get; private set; }
-        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => createdObjects;
-        public int ContentsCount => contents.Count;
-        public ScrollRect ScrollRect => scrollRect;
-        public RectTransform ContentRectTransform => scrollRect.content;
+        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => _createdObjects;
+        public int ContentsCount => _contents.Count;
+        public ScrollRect ScrollRect => _scrollRect;
+        public RectTransform ContentRectTransform => _scrollRect.content;
         public Action<int, IMappedObject> OnCreateObject { get; set; }
-        public IMappedObject[] MappedObjects => new[]{
-            (IMappedObject) original1,
-        };
+        public IMappedObject[] MappedObjects => new[] {(IMappedObject) _original1,};
 
-        public T1 Original1 => original1;
+        public T1 Original1 => _original1;
 
-        private Margin margin = new Margin();
-        public IReadonlyMargin Margin => margin;
+        private Margin _margin = new Margin();
+        public IReadonlyMargin Margin => _margin;
 
-        private readonly HashSet<GameObject> inactiveMarked = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _inactiveMarked = new HashSet<GameObject>();
 
-        public float NormalizedPosition
-        {
-            get => scrollRect.horizontalNormalizedPosition;
-            set => scrollRect.horizontalNormalizedPosition = value;
-        }
+        public float NormalizedPosition { get => _scrollRect.horizontalNormalizedPosition; set => _scrollRect.horizontalNormalizedPosition = value; }
 
         public HorizontalList(ScrollRect scrollRect, T1 original1)
         {
-            this.scrollRect = scrollRect;
+            this._scrollRect = scrollRect;
 
-            originalInfoCache = new (string Name, float Size)[1];
+            _originalInfoCache = new (string Name, float Size)[1];
 
-            this.original1 = original1;
-            this.original1.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T1), new List<IMappedObject>());
-            originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
+            this._original1 = original1;
+            this._original1.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T1), new List<IMappedObject>());
+            _originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
 
-            var kuchenList = this.scrollRect.gameObject.AddComponent<KuchenList>();
+            var kuchenList = this._scrollRect.gameObject.AddComponent<KuchenList>();
             kuchenList.List = new ListOperator(this);
 
             var viewport = scrollRect.viewport;
-            viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
+            _viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
 
-            additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
+            _additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
 
             var horizontalLayoutGroup = scrollRect.content.GetComponent<HorizontalLayoutGroup>();
             if (horizontalLayoutGroup != null)
             {
                 horizontalLayoutGroup.enabled = false;
                 Spacing = horizontalLayoutGroup.spacing;
-                margin = new Margin
-                {
-                    Left = horizontalLayoutGroup.padding.left,
-                    Right = horizontalLayoutGroup.padding.right
-                };
+                _margin = new Margin {Left = horizontalLayoutGroup.padding.left, Right = horizontalLayoutGroup.padding.right};
             }
 
             var contentSizeFitter = scrollRect.content.GetComponent<ContentSizeFitter>();
@@ -86,31 +72,23 @@ namespace AnKuchen.KuchenList
 
         private class ListOperator : IKuchenListMonoBehaviourBridge
         {
-            private readonly HorizontalList<T1> list;
+            private readonly HorizontalList<T1> _list;
 
-            public ListOperator(HorizontalList<T1> list)
-            {
-                this.list = list;
-            }
+            public ListOperator(HorizontalList<T1> list) { this._list = list; }
 
-            public void DeactivateAll()
-            {
-                list.DeactivateAll();
-            }
+            public void DeactivateAll() { _list.DeactivateAll(); }
 
-            public void UpdateView()
-            {
-                list.UpdateView();
-            }
+            public void UpdateView() { _list.UpdateView(); }
         }
 
         private void DeactivateAll()
         {
-            foreach (var item in createdObjects.Values)
+            foreach (var item in _createdObjects.Values)
             {
                 if (item is IReusableMappedObject reusable) reusable.Deactivate();
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         // RectTransformUtility.CalculateRelativeRectTransformBoundsを使うと、
@@ -121,7 +99,7 @@ namespace AnKuchen.KuchenList
             componentsInChildren.Add(child.GetComponent<RectTransform>());
             foreach (Transform a in child)
             {
-                if (inactiveMarked.Contains(a.gameObject)) continue;
+                if (_inactiveMarked.Contains(a.gameObject)) continue;
                 componentsInChildren.Add(a.GetComponent<RectTransform>());
             }
 
@@ -149,8 +127,8 @@ namespace AnKuchen.KuchenList
 
         private void UpdateView()
         {
-            var displayRect = viewportRectTransformCache.rect;
-            var contentRect = CalculateRelativeRectTransformBounds(viewportRectTransformCache, scrollRect.content);
+            var displayRect = _viewportRectTransformCache.rect;
+            var contentRect = CalculateRelativeRectTransformBounds(_viewportRectTransformCache, _scrollRect.content);
             var start = contentRect.max.x - displayRect.max.x;
             var displayRectWidth = displayRect.width;
             var end = start + displayRectWidth;
@@ -162,25 +140,25 @@ namespace AnKuchen.KuchenList
 
             var displayMinIndex = int.MaxValue;
             var displayMaxIndex = int.MinValue;
-            for (var i = 0; i < contentPositions.Count; ++i)
+            for (var i = 0; i < _contentPositions.Count; ++i)
             {
-                if (start > contentPositions[i].Item1) continue;
-                if (contentPositions[i].Item1 > end) break;
+                if (start > _contentPositions[i].Item1) continue;
+                if (_contentPositions[i].Item1 > end) break;
                 displayMinIndex = Mathf.Min(displayMinIndex, i);
                 displayMaxIndex = Mathf.Max(displayMaxIndex, i);
             }
 
             if (displayMinIndex == int.MaxValue)
             {
-                displayMinIndex = contentPositions.Count - 1;
-                displayMaxIndex = contentPositions.Count - 1;
+                displayMinIndex = _contentPositions.Count - 1;
+                displayMaxIndex = _contentPositions.Count - 1;
             }
 
             displayMinIndex = Mathf.Max(displayMinIndex - 1 - SpareElement, 0);
-            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, contents.Count - 1);
+            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, _contents.Count - 1);
 
             var removedList = new List<int>();
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var index = tmp.Key;
                 var map = tmp.Value;
@@ -192,55 +170,55 @@ namespace AnKuchen.KuchenList
 
             foreach (var removed in removedList)
             {
-                createdObjects.Remove(removed);
+                _createdObjects.Remove(removed);
             }
 
             for (var i = displayMinIndex; i <= displayMaxIndex; ++i)
             {
-                if (createdObjects.ContainsKey(i)) continue;
+                if (_createdObjects.ContainsKey(i)) continue;
 
                 RectTransform newObject = null;
                 IMappedObject newMappedObject = null;
-                var content = contents[i];
-                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original1, content.Callback1, contentPositions[i].Item1);
+                var content = _contents[i];
+                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original1, content.Callback1, _contentPositions[i].Item1);
                 if (content.Spacer != null) continue;
                 if (newObject == null) throw new Exception($"newObject == null");
-                createdObjects[i] = newMappedObject;
+                _createdObjects[i] = newMappedObject;
                 OnCreateObject?.Invoke(i, newMappedObject);
             }
 
-            foreach (var a in inactiveMarked) a.SetActive(false);
-            inactiveMarked.Clear();
+            foreach (var a in _inactiveMarked) a.SetActive(false);
+            _inactiveMarked.Clear();
         }
 
         private void UpdateListContents()
         {
             // clear elements
-            var isFirst = createdObjects.Values.Count == 0;
-            foreach (var map in createdObjects.Values)
+            var isFirst = _createdObjects.Values.Count == 0;
+            foreach (var map in _createdObjects.Values)
             {
                 CollectObject(map);
             }
-            createdObjects.Clear();
-            contentPositions.Clear();
+
+            _createdObjects.Clear();
+            _contentPositions.Clear();
 
             // create elements
             var calcPosition = Margin.Left;
             var prevElementName = "";
             var elementName = "";
-            var specialSpacings = (additionalInfo != null && additionalInfo.specialSpacings != null)
-                ? additionalInfo.specialSpacings
-                : new SpecialSpacing[] { };
-            for (var i = 0; i < contents.Count; ++i)
+            var specialSpacings = (_additionalInfo != null && _additionalInfo.specialSpacings != null) ? _additionalInfo.specialSpacings : new SpecialSpacing[] { };
+            for (var i = 0; i < _contents.Count; ++i)
             {
-                var content = contents[i];
+                var content = _contents[i];
                 var elementSize = 0f;
 
                 if (content.Callback1 != null)
                 {
-                    elementName = originalInfoCache[0].Name;
-                    elementSize = originalInfoCache[0].Size;
+                    elementName = _originalInfoCache[0].Name;
+                    elementSize = _originalInfoCache[0].Size;
                 }
+
                 if (content.Spacer != null)
                 {
                     elementName = "";
@@ -253,39 +231,40 @@ namespace AnKuchen.KuchenList
                 if (spacing == null && i != 0) spacing = Spacing;
 
                 calcPosition += spacing ?? 0f;
-                contentPositions.Add((calcPosition, elementSize));
+                _contentPositions.Add((calcPosition, elementSize));
                 calcPosition += elementSize;
 
                 prevElementName = elementName;
             }
+
             calcPosition += Margin.Right;
 
             // calc content size
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var s = c.sizeDelta;
             c.sizeDelta = new Vector2(calcPosition, s.y);
 
             var anchoredPosition = c.anchoredPosition;
             if (isFirst)
             {
-                var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
+                var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
                 if (c.pivot.x > 1f - 0.0001f) c.anchoredPosition = new Vector2(-scrollRectSizeDeltaX, anchoredPosition.y);
                 if (c.pivot.x < 0f + 0.0001f) c.anchoredPosition = new Vector2(scrollRectSizeDeltaX, anchoredPosition.y);
-                scrollRect.velocity = Vector2.zero;
+                _scrollRect.velocity = Vector2.zero;
             }
         }
 
         private void CollectObject(IMappedObject target)
         {
             if (target is IReusableMappedObject reusable) reusable.Deactivate();
-            inactiveMarked.Add(target.Mapper.Get());
+            _inactiveMarked.Add(target.Mapper.Get());
 
-            if (target is T1) cachedObjects[typeof(T1)].Add(target);
+            if (target is T1) _cachedObjects[typeof(T1)].Add(target);
         }
 
         private (RectTransform, IMappedObject) GetOrCreateNewObject<T>(T original, Action<T> contentCallback, float position) where T : IMappedObject, new()
         {
-            var cache = cachedObjects[typeof(T)];
+            var cache = _cachedObjects[typeof(T)];
             T newObject;
             if (cache.Count > 0)
             {
@@ -298,11 +277,11 @@ namespace AnKuchen.KuchenList
             }
 
             var newRectTransform = newObject.Mapper.Get<RectTransform>();
-            newRectTransform.SetParent(scrollRect.content);
+            newRectTransform.SetParent(_scrollRect.content);
             var newGameObject = newObject.Mapper.Get();
-            if (inactiveMarked.Contains(newGameObject))
+            if (_inactiveMarked.Contains(newGameObject))
             {
-                inactiveMarked.Remove(newGameObject);
+                _inactiveMarked.Remove(newGameObject);
             }
             else
             {
@@ -311,7 +290,7 @@ namespace AnKuchen.KuchenList
 
             var p = newRectTransform.anchoredPosition;
             var r = newRectTransform.rect;
-            newRectTransform.anchoredPosition = new Vector3((scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
+            newRectTransform.anchoredPosition = new Vector3((_scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
 
             if (newObject is IReusableMappedObject reusable) reusable.Activate();
             contentCallback(newObject);
@@ -319,14 +298,11 @@ namespace AnKuchen.KuchenList
             return (newRectTransform, newObject);
         }
 
-        public IListContentEditor<T1> Edit(EditMode editMode = EditMode.Clear)
-        {
-            return new ListContentEditor(this, editMode);
-        }
+        public IListContentEditor<T1> Edit(EditMode editMode = EditMode.Clear) { return new ListContentEditor(this, editMode); }
 
         public class ListContentEditor : IListContentEditor<T1>
         {
-            private readonly HorizontalList<T1> parent;
+            private readonly HorizontalList<T1> _parent;
             public List<UIFactory<T1>> Contents { get; set; }
             public float Spacing { get; set; }
             public Margin Margin { get; set; }
@@ -334,10 +310,10 @@ namespace AnKuchen.KuchenList
 
             public ListContentEditor(HorizontalList<T1> parent, EditMode editMode)
             {
-                this.parent = parent;
-                Contents = parent.contents;
+                this._parent = parent;
+                Contents = parent._contents;
                 Spacing = parent.Spacing;
-                Margin = parent.margin;
+                Margin = parent._margin;
                 SpareElement = parent.SpareElement;
 
                 if (editMode == EditMode.Clear) Contents.Clear();
@@ -345,47 +321,44 @@ namespace AnKuchen.KuchenList
 
             public void Dispose()
             {
-                parent.contents = Contents;
-                parent.Spacing = Spacing;
-                parent.margin = Margin;
-                parent.SpareElement = SpareElement;
-                parent.UpdateListContents();
+                _parent._contents = Contents;
+                _parent.Spacing = Spacing;
+                _parent._margin = Margin;
+                _parent.SpareElement = SpareElement;
+                _parent.UpdateListContents();
             }
 
-            public void Add(Action<T1> factory)
-            {
-                Contents.Add(new UIFactory<T1>(factory));
-            }
-
+            public void Add(Action<T1> factory) { Contents.Add(new UIFactory<T1>(factory)); }
         }
 
         public void DestroyCachedGameObjects()
         {
-            foreach (var cachedObject in cachedObjects)
+            foreach (var cachedObject in _cachedObjects)
             {
                 foreach (var go in cachedObject.Value)
                 {
                     Object.Destroy(go.Mapper.Get());
                 }
+
                 cachedObject.Value.Clear();
             }
         }
 
         public Vector2? CalcScrollPosition(int index, ScrollToType type = ScrollToType.Top, float additionalSpacing = 0f)
         {
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var anchoredPosition = c.anchoredPosition;
-            var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
-            var content = contentPositions[index];
-            var contentWidth = scrollRect.content.rect.width;
-            var viewportWidth = viewportRectTransformCache.rect.width;
+            var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
+            var content = _contentPositions[index];
+            var contentWidth = _scrollRect.content.rect.width;
+            var viewportWidth = _viewportRectTransformCache.rect.width;
             if (viewportWidth > contentWidth) return null;
 
             if (c.pivot.x > 1f - 0.0001f)
             {
-                var p = - scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
+                var p = -scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
                 var limitMin = viewportWidth / 2f;
-                var limitMax = - limitMin + contentWidth;
+                var limitMax = -limitMin + contentWidth;
                 var top = Mathf.Clamp(p - Spacing - additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p - viewportWidth + content.Item2 + Spacing + additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p - (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -405,8 +378,8 @@ namespace AnKuchen.KuchenList
             if (c.pivot.x < 0f + 0.0001f)
             {
                 var p = scrollRectSizeDeltaX - content.Item1;
-                var limitMax = - viewportWidth / 2f;
-                var limitMin = - limitMax - contentWidth;
+                var limitMax = -viewportWidth / 2f;
+                var limitMin = -limitMax - contentWidth;
                 var top = Mathf.Clamp(p + Spacing + additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p + viewportWidth - content.Item2 - Spacing - additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p + (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -430,100 +403,89 @@ namespace AnKuchen.KuchenList
         {
             var scrollPosition = CalcScrollPosition(index, type, additionalSpacing);
             if (scrollPosition != null) ContentRectTransform.anchoredPosition = scrollPosition.Value;
-            scrollRect.velocity = Vector2.zero;
+            _scrollRect.velocity = Vector2.zero;
         }
 
         public void UpdateAllElements()
         {
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var map = tmp.Value;
                 CollectObject(map);
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         public void UpdateElement(int index)
         {
-            if (!createdObjects.ContainsKey(index)) return;
-            CollectObject(createdObjects[index]);
-            createdObjects.Remove(index);
+            if (!_createdObjects.ContainsKey(index)) return;
+            CollectObject(_createdObjects[index]);
+            _createdObjects.Remove(index);
         }
     }
 
-    public class HorizontalList<T1, T2> : IKuchenList
-        where T1 : IMappedObject, new() where T2 : IMappedObject, new()
+    public class HorizontalList<T1, T2> : IKuchenList where T1 : IMappedObject, new() where T2 : IMappedObject, new()
     {
-        private readonly ScrollRect scrollRect;
-        private readonly T1 original1;
-        private readonly T2 original2;
-        private readonly (string Name, float Size)[] originalInfoCache;
-        private List<UIFactory<T1, T2>> contents = new List<UIFactory<T1, T2>>();
-        private readonly List<(float, float)> contentPositions = new List<(float, float)>();
-        private readonly Dictionary<int, IMappedObject> createdObjects = new Dictionary<int, IMappedObject>();
-        private readonly Dictionary<Type, List<IMappedObject>> cachedObjects = new Dictionary<Type, List<IMappedObject>>();
-        private readonly RectTransform viewportRectTransformCache;
-        private readonly ListAdditionalInfo additionalInfo;
+        private readonly ScrollRect _scrollRect;
+        private readonly T1 _original1;
+        private readonly T2 _original2;
+        private readonly (string Name, float Size)[] _originalInfoCache;
+        private List<UIFactory<T1, T2>> _contents = new List<UIFactory<T1, T2>>();
+        private readonly List<(float, float)> _contentPositions = new List<(float, float)>();
+        private readonly Dictionary<int, IMappedObject> _createdObjects = new Dictionary<int, IMappedObject>();
+        private readonly Dictionary<Type, List<IMappedObject>> _cachedObjects = new Dictionary<Type, List<IMappedObject>>();
+        private readonly RectTransform _viewportRectTransformCache;
+        private readonly ListAdditionalInfo _additionalInfo;
         public float Spacing { get; private set; }
         public int SpareElement { get; private set; }
-        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => createdObjects;
-        public int ContentsCount => contents.Count;
-        public ScrollRect ScrollRect => scrollRect;
-        public RectTransform ContentRectTransform => scrollRect.content;
+        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => _createdObjects;
+        public int ContentsCount => _contents.Count;
+        public ScrollRect ScrollRect => _scrollRect;
+        public RectTransform ContentRectTransform => _scrollRect.content;
         public Action<int, IMappedObject> OnCreateObject { get; set; }
-        public IMappedObject[] MappedObjects => new[]{
-            (IMappedObject) original1,
-            (IMappedObject) original2,
-        };
+        public IMappedObject[] MappedObjects => new[] {(IMappedObject) _original1, (IMappedObject) _original2,};
 
-        public T1 Original1 => original1;
-        public T2 Original2 => original2;
+        public T1 Original1 => _original1;
+        public T2 Original2 => _original2;
 
-        private Margin margin = new Margin();
-        public IReadonlyMargin Margin => margin;
+        private Margin _margin = new Margin();
+        public IReadonlyMargin Margin => _margin;
 
-        private readonly HashSet<GameObject> inactiveMarked = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _inactiveMarked = new HashSet<GameObject>();
 
-        public float NormalizedPosition
-        {
-            get => scrollRect.horizontalNormalizedPosition;
-            set => scrollRect.horizontalNormalizedPosition = value;
-        }
+        public float NormalizedPosition { get => _scrollRect.horizontalNormalizedPosition; set => _scrollRect.horizontalNormalizedPosition = value; }
 
         public HorizontalList(ScrollRect scrollRect, T1 original1, T2 original2)
         {
-            this.scrollRect = scrollRect;
+            this._scrollRect = scrollRect;
 
-            originalInfoCache = new (string Name, float Size)[2];
+            _originalInfoCache = new (string Name, float Size)[2];
 
-            this.original1 = original1;
-            this.original1.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T1), new List<IMappedObject>());
-            originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
+            this._original1 = original1;
+            this._original1.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T1), new List<IMappedObject>());
+            _originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
 
-            this.original2 = original2;
-            this.original2.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T2), new List<IMappedObject>());
-            originalInfoCache[1] = (original2.Mapper.Get().name, original2.Mapper.Get<RectTransform>().rect.width);
+            this._original2 = original2;
+            this._original2.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T2), new List<IMappedObject>());
+            _originalInfoCache[1] = (original2.Mapper.Get().name, original2.Mapper.Get<RectTransform>().rect.width);
 
-            var kuchenList = this.scrollRect.gameObject.AddComponent<KuchenList>();
+            var kuchenList = this._scrollRect.gameObject.AddComponent<KuchenList>();
             kuchenList.List = new ListOperator(this);
 
             var viewport = scrollRect.viewport;
-            viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
+            _viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
 
-            additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
+            _additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
 
             var horizontalLayoutGroup = scrollRect.content.GetComponent<HorizontalLayoutGroup>();
             if (horizontalLayoutGroup != null)
             {
                 horizontalLayoutGroup.enabled = false;
                 Spacing = horizontalLayoutGroup.spacing;
-                margin = new Margin
-                {
-                    Left = horizontalLayoutGroup.padding.left,
-                    Right = horizontalLayoutGroup.padding.right
-                };
+                _margin = new Margin {Left = horizontalLayoutGroup.padding.left, Right = horizontalLayoutGroup.padding.right};
             }
 
             var contentSizeFitter = scrollRect.content.GetComponent<ContentSizeFitter>();
@@ -535,31 +497,23 @@ namespace AnKuchen.KuchenList
 
         private class ListOperator : IKuchenListMonoBehaviourBridge
         {
-            private readonly HorizontalList<T1, T2> list;
+            private readonly HorizontalList<T1, T2> _list;
 
-            public ListOperator(HorizontalList<T1, T2> list)
-            {
-                this.list = list;
-            }
+            public ListOperator(HorizontalList<T1, T2> list) { this._list = list; }
 
-            public void DeactivateAll()
-            {
-                list.DeactivateAll();
-            }
+            public void DeactivateAll() { _list.DeactivateAll(); }
 
-            public void UpdateView()
-            {
-                list.UpdateView();
-            }
+            public void UpdateView() { _list.UpdateView(); }
         }
 
         private void DeactivateAll()
         {
-            foreach (var item in createdObjects.Values)
+            foreach (var item in _createdObjects.Values)
             {
                 if (item is IReusableMappedObject reusable) reusable.Deactivate();
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         // RectTransformUtility.CalculateRelativeRectTransformBoundsを使うと、
@@ -570,7 +524,7 @@ namespace AnKuchen.KuchenList
             componentsInChildren.Add(child.GetComponent<RectTransform>());
             foreach (Transform a in child)
             {
-                if (inactiveMarked.Contains(a.gameObject)) continue;
+                if (_inactiveMarked.Contains(a.gameObject)) continue;
                 componentsInChildren.Add(a.GetComponent<RectTransform>());
             }
 
@@ -598,8 +552,8 @@ namespace AnKuchen.KuchenList
 
         private void UpdateView()
         {
-            var displayRect = viewportRectTransformCache.rect;
-            var contentRect = CalculateRelativeRectTransformBounds(viewportRectTransformCache, scrollRect.content);
+            var displayRect = _viewportRectTransformCache.rect;
+            var contentRect = CalculateRelativeRectTransformBounds(_viewportRectTransformCache, _scrollRect.content);
             var start = contentRect.max.x - displayRect.max.x;
             var displayRectWidth = displayRect.width;
             var end = start + displayRectWidth;
@@ -611,25 +565,25 @@ namespace AnKuchen.KuchenList
 
             var displayMinIndex = int.MaxValue;
             var displayMaxIndex = int.MinValue;
-            for (var i = 0; i < contentPositions.Count; ++i)
+            for (var i = 0; i < _contentPositions.Count; ++i)
             {
-                if (start > contentPositions[i].Item1) continue;
-                if (contentPositions[i].Item1 > end) break;
+                if (start > _contentPositions[i].Item1) continue;
+                if (_contentPositions[i].Item1 > end) break;
                 displayMinIndex = Mathf.Min(displayMinIndex, i);
                 displayMaxIndex = Mathf.Max(displayMaxIndex, i);
             }
 
             if (displayMinIndex == int.MaxValue)
             {
-                displayMinIndex = contentPositions.Count - 1;
-                displayMaxIndex = contentPositions.Count - 1;
+                displayMinIndex = _contentPositions.Count - 1;
+                displayMaxIndex = _contentPositions.Count - 1;
             }
 
             displayMinIndex = Mathf.Max(displayMinIndex - 1 - SpareElement, 0);
-            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, contents.Count - 1);
+            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, _contents.Count - 1);
 
             var removedList = new List<int>();
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var index = tmp.Key;
                 var map = tmp.Value;
@@ -641,61 +595,62 @@ namespace AnKuchen.KuchenList
 
             foreach (var removed in removedList)
             {
-                createdObjects.Remove(removed);
+                _createdObjects.Remove(removed);
             }
 
             for (var i = displayMinIndex; i <= displayMaxIndex; ++i)
             {
-                if (createdObjects.ContainsKey(i)) continue;
+                if (_createdObjects.ContainsKey(i)) continue;
 
                 RectTransform newObject = null;
                 IMappedObject newMappedObject = null;
-                var content = contents[i];
-                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original1, content.Callback1, contentPositions[i].Item1);
-                if (content.Callback2 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original2, content.Callback2, contentPositions[i].Item1);
+                var content = _contents[i];
+                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original1, content.Callback1, _contentPositions[i].Item1);
+                if (content.Callback2 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original2, content.Callback2, _contentPositions[i].Item1);
                 if (content.Spacer != null) continue;
                 if (newObject == null) throw new Exception($"newObject == null");
-                createdObjects[i] = newMappedObject;
+                _createdObjects[i] = newMappedObject;
                 OnCreateObject?.Invoke(i, newMappedObject);
             }
 
-            foreach (var a in inactiveMarked) a.SetActive(false);
-            inactiveMarked.Clear();
+            foreach (var a in _inactiveMarked) a.SetActive(false);
+            _inactiveMarked.Clear();
         }
 
         private void UpdateListContents()
         {
             // clear elements
-            var isFirst = createdObjects.Values.Count == 0;
-            foreach (var map in createdObjects.Values)
+            var isFirst = _createdObjects.Values.Count == 0;
+            foreach (var map in _createdObjects.Values)
             {
                 CollectObject(map);
             }
-            createdObjects.Clear();
-            contentPositions.Clear();
+
+            _createdObjects.Clear();
+            _contentPositions.Clear();
 
             // create elements
             var calcPosition = Margin.Left;
             var prevElementName = "";
             var elementName = "";
-            var specialSpacings = (additionalInfo != null && additionalInfo.specialSpacings != null)
-                ? additionalInfo.specialSpacings
-                : new SpecialSpacing[] { };
-            for (var i = 0; i < contents.Count; ++i)
+            var specialSpacings = (_additionalInfo != null && _additionalInfo.specialSpacings != null) ? _additionalInfo.specialSpacings : new SpecialSpacing[] { };
+            for (var i = 0; i < _contents.Count; ++i)
             {
-                var content = contents[i];
+                var content = _contents[i];
                 var elementSize = 0f;
 
                 if (content.Callback1 != null)
                 {
-                    elementName = originalInfoCache[0].Name;
-                    elementSize = originalInfoCache[0].Size;
+                    elementName = _originalInfoCache[0].Name;
+                    elementSize = _originalInfoCache[0].Size;
                 }
+
                 if (content.Callback2 != null)
                 {
-                    elementName = originalInfoCache[1].Name;
-                    elementSize = originalInfoCache[1].Size;
+                    elementName = _originalInfoCache[1].Name;
+                    elementSize = _originalInfoCache[1].Size;
                 }
+
                 if (content.Spacer != null)
                 {
                     elementName = "";
@@ -708,40 +663,41 @@ namespace AnKuchen.KuchenList
                 if (spacing == null && i != 0) spacing = Spacing;
 
                 calcPosition += spacing ?? 0f;
-                contentPositions.Add((calcPosition, elementSize));
+                _contentPositions.Add((calcPosition, elementSize));
                 calcPosition += elementSize;
 
                 prevElementName = elementName;
             }
+
             calcPosition += Margin.Right;
 
             // calc content size
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var s = c.sizeDelta;
             c.sizeDelta = new Vector2(calcPosition, s.y);
 
             var anchoredPosition = c.anchoredPosition;
             if (isFirst)
             {
-                var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
+                var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
                 if (c.pivot.x > 1f - 0.0001f) c.anchoredPosition = new Vector2(-scrollRectSizeDeltaX, anchoredPosition.y);
                 if (c.pivot.x < 0f + 0.0001f) c.anchoredPosition = new Vector2(scrollRectSizeDeltaX, anchoredPosition.y);
-                scrollRect.velocity = Vector2.zero;
+                _scrollRect.velocity = Vector2.zero;
             }
         }
 
         private void CollectObject(IMappedObject target)
         {
             if (target is IReusableMappedObject reusable) reusable.Deactivate();
-            inactiveMarked.Add(target.Mapper.Get());
+            _inactiveMarked.Add(target.Mapper.Get());
 
-            if (target is T1) cachedObjects[typeof(T1)].Add(target);
-            if (target is T2) cachedObjects[typeof(T2)].Add(target);
+            if (target is T1) _cachedObjects[typeof(T1)].Add(target);
+            if (target is T2) _cachedObjects[typeof(T2)].Add(target);
         }
 
         private (RectTransform, IMappedObject) GetOrCreateNewObject<T>(T original, Action<T> contentCallback, float position) where T : IMappedObject, new()
         {
-            var cache = cachedObjects[typeof(T)];
+            var cache = _cachedObjects[typeof(T)];
             T newObject;
             if (cache.Count > 0)
             {
@@ -754,11 +710,11 @@ namespace AnKuchen.KuchenList
             }
 
             var newRectTransform = newObject.Mapper.Get<RectTransform>();
-            newRectTransform.SetParent(scrollRect.content);
+            newRectTransform.SetParent(_scrollRect.content);
             var newGameObject = newObject.Mapper.Get();
-            if (inactiveMarked.Contains(newGameObject))
+            if (_inactiveMarked.Contains(newGameObject))
             {
-                inactiveMarked.Remove(newGameObject);
+                _inactiveMarked.Remove(newGameObject);
             }
             else
             {
@@ -767,7 +723,7 @@ namespace AnKuchen.KuchenList
 
             var p = newRectTransform.anchoredPosition;
             var r = newRectTransform.rect;
-            newRectTransform.anchoredPosition = new Vector3((scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
+            newRectTransform.anchoredPosition = new Vector3((_scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
 
             if (newObject is IReusableMappedObject reusable) reusable.Activate();
             contentCallback(newObject);
@@ -775,14 +731,11 @@ namespace AnKuchen.KuchenList
             return (newRectTransform, newObject);
         }
 
-        public IListContentEditor<T1, T2> Edit(EditMode editMode = EditMode.Clear)
-        {
-            return new ListContentEditor(this, editMode);
-        }
+        public IListContentEditor<T1, T2> Edit(EditMode editMode = EditMode.Clear) { return new ListContentEditor(this, editMode); }
 
         public class ListContentEditor : IListContentEditor<T1, T2>
         {
-            private readonly HorizontalList<T1, T2> parent;
+            private readonly HorizontalList<T1, T2> _parent;
             public List<UIFactory<T1, T2>> Contents { get; set; }
             public float Spacing { get; set; }
             public Margin Margin { get; set; }
@@ -790,10 +743,10 @@ namespace AnKuchen.KuchenList
 
             public ListContentEditor(HorizontalList<T1, T2> parent, EditMode editMode)
             {
-                this.parent = parent;
-                Contents = parent.contents;
+                this._parent = parent;
+                Contents = parent._contents;
                 Spacing = parent.Spacing;
-                Margin = parent.margin;
+                Margin = parent._margin;
                 SpareElement = parent.SpareElement;
 
                 if (editMode == EditMode.Clear) Contents.Clear();
@@ -801,52 +754,46 @@ namespace AnKuchen.KuchenList
 
             public void Dispose()
             {
-                parent.contents = Contents;
-                parent.Spacing = Spacing;
-                parent.margin = Margin;
-                parent.SpareElement = SpareElement;
-                parent.UpdateListContents();
+                _parent._contents = Contents;
+                _parent.Spacing = Spacing;
+                _parent._margin = Margin;
+                _parent.SpareElement = SpareElement;
+                _parent.UpdateListContents();
             }
 
-            public void Add(Action<T1> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2>(factory));
-            }
+            public void Add(Action<T1> factory) { Contents.Add(new UIFactory<T1, T2>(factory)); }
 
-            public void Add(Action<T2> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2>(factory));
-            }
-
+            public void Add(Action<T2> factory) { Contents.Add(new UIFactory<T1, T2>(factory)); }
         }
 
         public void DestroyCachedGameObjects()
         {
-            foreach (var cachedObject in cachedObjects)
+            foreach (var cachedObject in _cachedObjects)
             {
                 foreach (var go in cachedObject.Value)
                 {
                     Object.Destroy(go.Mapper.Get());
                 }
+
                 cachedObject.Value.Clear();
             }
         }
 
         public Vector2? CalcScrollPosition(int index, ScrollToType type = ScrollToType.Top, float additionalSpacing = 0f)
         {
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var anchoredPosition = c.anchoredPosition;
-            var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
-            var content = contentPositions[index];
-            var contentWidth = scrollRect.content.rect.width;
-            var viewportWidth = viewportRectTransformCache.rect.width;
+            var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
+            var content = _contentPositions[index];
+            var contentWidth = _scrollRect.content.rect.width;
+            var viewportWidth = _viewportRectTransformCache.rect.width;
             if (viewportWidth > contentWidth) return null;
 
             if (c.pivot.x > 1f - 0.0001f)
             {
-                var p = - scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
+                var p = -scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
                 var limitMin = viewportWidth / 2f;
-                var limitMax = - limitMin + contentWidth;
+                var limitMax = -limitMin + contentWidth;
                 var top = Mathf.Clamp(p - Spacing - additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p - viewportWidth + content.Item2 + Spacing + additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p - (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -866,8 +813,8 @@ namespace AnKuchen.KuchenList
             if (c.pivot.x < 0f + 0.0001f)
             {
                 var p = scrollRectSizeDeltaX - content.Item1;
-                var limitMax = - viewportWidth / 2f;
-                var limitMin = - limitMax - contentWidth;
+                var limitMax = -viewportWidth / 2f;
+                var limitMin = -limitMax - contentWidth;
                 var top = Mathf.Clamp(p + Spacing + additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p + viewportWidth - content.Item2 - Spacing - additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p + (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -891,108 +838,96 @@ namespace AnKuchen.KuchenList
         {
             var scrollPosition = CalcScrollPosition(index, type, additionalSpacing);
             if (scrollPosition != null) ContentRectTransform.anchoredPosition = scrollPosition.Value;
-            scrollRect.velocity = Vector2.zero;
+            _scrollRect.velocity = Vector2.zero;
         }
 
         public void UpdateAllElements()
         {
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var map = tmp.Value;
                 CollectObject(map);
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         public void UpdateElement(int index)
         {
-            if (!createdObjects.ContainsKey(index)) return;
-            CollectObject(createdObjects[index]);
-            createdObjects.Remove(index);
+            if (!_createdObjects.ContainsKey(index)) return;
+            CollectObject(_createdObjects[index]);
+            _createdObjects.Remove(index);
         }
     }
 
-    public class HorizontalList<T1, T2, T3> : IKuchenList
-        where T1 : IMappedObject, new() where T2 : IMappedObject, new() where T3 : IMappedObject, new()
+    public class HorizontalList<T1, T2, T3> : IKuchenList where T1 : IMappedObject, new() where T2 : IMappedObject, new() where T3 : IMappedObject, new()
     {
-        private readonly ScrollRect scrollRect;
-        private readonly T1 original1;
-        private readonly T2 original2;
-        private readonly T3 original3;
-        private readonly (string Name, float Size)[] originalInfoCache;
-        private List<UIFactory<T1, T2, T3>> contents = new List<UIFactory<T1, T2, T3>>();
-        private readonly List<(float, float)> contentPositions = new List<(float, float)>();
-        private readonly Dictionary<int, IMappedObject> createdObjects = new Dictionary<int, IMappedObject>();
-        private readonly Dictionary<Type, List<IMappedObject>> cachedObjects = new Dictionary<Type, List<IMappedObject>>();
-        private readonly RectTransform viewportRectTransformCache;
-        private readonly ListAdditionalInfo additionalInfo;
+        private readonly ScrollRect _scrollRect;
+        private readonly T1 _original1;
+        private readonly T2 _original2;
+        private readonly T3 _original3;
+        private readonly (string Name, float Size)[] _originalInfoCache;
+        private List<UIFactory<T1, T2, T3>> _contents = new List<UIFactory<T1, T2, T3>>();
+        private readonly List<(float, float)> _contentPositions = new List<(float, float)>();
+        private readonly Dictionary<int, IMappedObject> _createdObjects = new Dictionary<int, IMappedObject>();
+        private readonly Dictionary<Type, List<IMappedObject>> _cachedObjects = new Dictionary<Type, List<IMappedObject>>();
+        private readonly RectTransform _viewportRectTransformCache;
+        private readonly ListAdditionalInfo _additionalInfo;
         public float Spacing { get; private set; }
         public int SpareElement { get; private set; }
-        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => createdObjects;
-        public int ContentsCount => contents.Count;
-        public ScrollRect ScrollRect => scrollRect;
-        public RectTransform ContentRectTransform => scrollRect.content;
+        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => _createdObjects;
+        public int ContentsCount => _contents.Count;
+        public ScrollRect ScrollRect => _scrollRect;
+        public RectTransform ContentRectTransform => _scrollRect.content;
         public Action<int, IMappedObject> OnCreateObject { get; set; }
-        public IMappedObject[] MappedObjects => new[]{
-            (IMappedObject) original1,
-            (IMappedObject) original2,
-            (IMappedObject) original3,
-        };
+        public IMappedObject[] MappedObjects => new[] {(IMappedObject) _original1, (IMappedObject) _original2, (IMappedObject) _original3,};
 
-        public T1 Original1 => original1;
-        public T2 Original2 => original2;
-        public T3 Original3 => original3;
+        public T1 Original1 => _original1;
+        public T2 Original2 => _original2;
+        public T3 Original3 => _original3;
 
-        private Margin margin = new Margin();
-        public IReadonlyMargin Margin => margin;
+        private Margin _margin = new Margin();
+        public IReadonlyMargin Margin => _margin;
 
-        private readonly HashSet<GameObject> inactiveMarked = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _inactiveMarked = new HashSet<GameObject>();
 
-        public float NormalizedPosition
-        {
-            get => scrollRect.horizontalNormalizedPosition;
-            set => scrollRect.horizontalNormalizedPosition = value;
-        }
+        public float NormalizedPosition { get => _scrollRect.horizontalNormalizedPosition; set => _scrollRect.horizontalNormalizedPosition = value; }
 
         public HorizontalList(ScrollRect scrollRect, T1 original1, T2 original2, T3 original3)
         {
-            this.scrollRect = scrollRect;
+            this._scrollRect = scrollRect;
 
-            originalInfoCache = new (string Name, float Size)[3];
+            _originalInfoCache = new (string Name, float Size)[3];
 
-            this.original1 = original1;
-            this.original1.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T1), new List<IMappedObject>());
-            originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
+            this._original1 = original1;
+            this._original1.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T1), new List<IMappedObject>());
+            _originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
 
-            this.original2 = original2;
-            this.original2.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T2), new List<IMappedObject>());
-            originalInfoCache[1] = (original2.Mapper.Get().name, original2.Mapper.Get<RectTransform>().rect.width);
+            this._original2 = original2;
+            this._original2.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T2), new List<IMappedObject>());
+            _originalInfoCache[1] = (original2.Mapper.Get().name, original2.Mapper.Get<RectTransform>().rect.width);
 
-            this.original3 = original3;
-            this.original3.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T3), new List<IMappedObject>());
-            originalInfoCache[2] = (original3.Mapper.Get().name, original3.Mapper.Get<RectTransform>().rect.width);
+            this._original3 = original3;
+            this._original3.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T3), new List<IMappedObject>());
+            _originalInfoCache[2] = (original3.Mapper.Get().name, original3.Mapper.Get<RectTransform>().rect.width);
 
-            var kuchenList = this.scrollRect.gameObject.AddComponent<KuchenList>();
+            var kuchenList = this._scrollRect.gameObject.AddComponent<KuchenList>();
             kuchenList.List = new ListOperator(this);
 
             var viewport = scrollRect.viewport;
-            viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
+            _viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
 
-            additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
+            _additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
 
             var horizontalLayoutGroup = scrollRect.content.GetComponent<HorizontalLayoutGroup>();
             if (horizontalLayoutGroup != null)
             {
                 horizontalLayoutGroup.enabled = false;
                 Spacing = horizontalLayoutGroup.spacing;
-                margin = new Margin
-                {
-                    Left = horizontalLayoutGroup.padding.left,
-                    Right = horizontalLayoutGroup.padding.right
-                };
+                _margin = new Margin {Left = horizontalLayoutGroup.padding.left, Right = horizontalLayoutGroup.padding.right};
             }
 
             var contentSizeFitter = scrollRect.content.GetComponent<ContentSizeFitter>();
@@ -1004,31 +939,23 @@ namespace AnKuchen.KuchenList
 
         private class ListOperator : IKuchenListMonoBehaviourBridge
         {
-            private readonly HorizontalList<T1, T2, T3> list;
+            private readonly HorizontalList<T1, T2, T3> _list;
 
-            public ListOperator(HorizontalList<T1, T2, T3> list)
-            {
-                this.list = list;
-            }
+            public ListOperator(HorizontalList<T1, T2, T3> list) { this._list = list; }
 
-            public void DeactivateAll()
-            {
-                list.DeactivateAll();
-            }
+            public void DeactivateAll() { _list.DeactivateAll(); }
 
-            public void UpdateView()
-            {
-                list.UpdateView();
-            }
+            public void UpdateView() { _list.UpdateView(); }
         }
 
         private void DeactivateAll()
         {
-            foreach (var item in createdObjects.Values)
+            foreach (var item in _createdObjects.Values)
             {
                 if (item is IReusableMappedObject reusable) reusable.Deactivate();
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         // RectTransformUtility.CalculateRelativeRectTransformBoundsを使うと、
@@ -1039,7 +966,7 @@ namespace AnKuchen.KuchenList
             componentsInChildren.Add(child.GetComponent<RectTransform>());
             foreach (Transform a in child)
             {
-                if (inactiveMarked.Contains(a.gameObject)) continue;
+                if (_inactiveMarked.Contains(a.gameObject)) continue;
                 componentsInChildren.Add(a.GetComponent<RectTransform>());
             }
 
@@ -1067,8 +994,8 @@ namespace AnKuchen.KuchenList
 
         private void UpdateView()
         {
-            var displayRect = viewportRectTransformCache.rect;
-            var contentRect = CalculateRelativeRectTransformBounds(viewportRectTransformCache, scrollRect.content);
+            var displayRect = _viewportRectTransformCache.rect;
+            var contentRect = CalculateRelativeRectTransformBounds(_viewportRectTransformCache, _scrollRect.content);
             var start = contentRect.max.x - displayRect.max.x;
             var displayRectWidth = displayRect.width;
             var end = start + displayRectWidth;
@@ -1080,25 +1007,25 @@ namespace AnKuchen.KuchenList
 
             var displayMinIndex = int.MaxValue;
             var displayMaxIndex = int.MinValue;
-            for (var i = 0; i < contentPositions.Count; ++i)
+            for (var i = 0; i < _contentPositions.Count; ++i)
             {
-                if (start > contentPositions[i].Item1) continue;
-                if (contentPositions[i].Item1 > end) break;
+                if (start > _contentPositions[i].Item1) continue;
+                if (_contentPositions[i].Item1 > end) break;
                 displayMinIndex = Mathf.Min(displayMinIndex, i);
                 displayMaxIndex = Mathf.Max(displayMaxIndex, i);
             }
 
             if (displayMinIndex == int.MaxValue)
             {
-                displayMinIndex = contentPositions.Count - 1;
-                displayMaxIndex = contentPositions.Count - 1;
+                displayMinIndex = _contentPositions.Count - 1;
+                displayMaxIndex = _contentPositions.Count - 1;
             }
 
             displayMinIndex = Mathf.Max(displayMinIndex - 1 - SpareElement, 0);
-            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, contents.Count - 1);
+            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, _contents.Count - 1);
 
             var removedList = new List<int>();
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var index = tmp.Key;
                 var map = tmp.Value;
@@ -1110,67 +1037,69 @@ namespace AnKuchen.KuchenList
 
             foreach (var removed in removedList)
             {
-                createdObjects.Remove(removed);
+                _createdObjects.Remove(removed);
             }
 
             for (var i = displayMinIndex; i <= displayMaxIndex; ++i)
             {
-                if (createdObjects.ContainsKey(i)) continue;
+                if (_createdObjects.ContainsKey(i)) continue;
 
                 RectTransform newObject = null;
                 IMappedObject newMappedObject = null;
-                var content = contents[i];
-                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original1, content.Callback1, contentPositions[i].Item1);
-                if (content.Callback2 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original2, content.Callback2, contentPositions[i].Item1);
-                if (content.Callback3 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original3, content.Callback3, contentPositions[i].Item1);
+                var content = _contents[i];
+                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original1, content.Callback1, _contentPositions[i].Item1);
+                if (content.Callback2 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original2, content.Callback2, _contentPositions[i].Item1);
+                if (content.Callback3 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original3, content.Callback3, _contentPositions[i].Item1);
                 if (content.Spacer != null) continue;
                 if (newObject == null) throw new Exception($"newObject == null");
-                createdObjects[i] = newMappedObject;
+                _createdObjects[i] = newMappedObject;
                 OnCreateObject?.Invoke(i, newMappedObject);
             }
 
-            foreach (var a in inactiveMarked) a.SetActive(false);
-            inactiveMarked.Clear();
+            foreach (var a in _inactiveMarked) a.SetActive(false);
+            _inactiveMarked.Clear();
         }
 
         private void UpdateListContents()
         {
             // clear elements
-            var isFirst = createdObjects.Values.Count == 0;
-            foreach (var map in createdObjects.Values)
+            var isFirst = _createdObjects.Values.Count == 0;
+            foreach (var map in _createdObjects.Values)
             {
                 CollectObject(map);
             }
-            createdObjects.Clear();
-            contentPositions.Clear();
+
+            _createdObjects.Clear();
+            _contentPositions.Clear();
 
             // create elements
             var calcPosition = Margin.Left;
             var prevElementName = "";
             var elementName = "";
-            var specialSpacings = (additionalInfo != null && additionalInfo.specialSpacings != null)
-                ? additionalInfo.specialSpacings
-                : new SpecialSpacing[] { };
-            for (var i = 0; i < contents.Count; ++i)
+            var specialSpacings = (_additionalInfo != null && _additionalInfo.specialSpacings != null) ? _additionalInfo.specialSpacings : new SpecialSpacing[] { };
+            for (var i = 0; i < _contents.Count; ++i)
             {
-                var content = contents[i];
+                var content = _contents[i];
                 var elementSize = 0f;
 
                 if (content.Callback1 != null)
                 {
-                    elementName = originalInfoCache[0].Name;
-                    elementSize = originalInfoCache[0].Size;
+                    elementName = _originalInfoCache[0].Name;
+                    elementSize = _originalInfoCache[0].Size;
                 }
+
                 if (content.Callback2 != null)
                 {
-                    elementName = originalInfoCache[1].Name;
-                    elementSize = originalInfoCache[1].Size;
+                    elementName = _originalInfoCache[1].Name;
+                    elementSize = _originalInfoCache[1].Size;
                 }
+
                 if (content.Callback3 != null)
                 {
-                    elementName = originalInfoCache[2].Name;
-                    elementSize = originalInfoCache[2].Size;
+                    elementName = _originalInfoCache[2].Name;
+                    elementSize = _originalInfoCache[2].Size;
                 }
+
                 if (content.Spacer != null)
                 {
                     elementName = "";
@@ -1183,41 +1112,42 @@ namespace AnKuchen.KuchenList
                 if (spacing == null && i != 0) spacing = Spacing;
 
                 calcPosition += spacing ?? 0f;
-                contentPositions.Add((calcPosition, elementSize));
+                _contentPositions.Add((calcPosition, elementSize));
                 calcPosition += elementSize;
 
                 prevElementName = elementName;
             }
+
             calcPosition += Margin.Right;
 
             // calc content size
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var s = c.sizeDelta;
             c.sizeDelta = new Vector2(calcPosition, s.y);
 
             var anchoredPosition = c.anchoredPosition;
             if (isFirst)
             {
-                var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
+                var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
                 if (c.pivot.x > 1f - 0.0001f) c.anchoredPosition = new Vector2(-scrollRectSizeDeltaX, anchoredPosition.y);
                 if (c.pivot.x < 0f + 0.0001f) c.anchoredPosition = new Vector2(scrollRectSizeDeltaX, anchoredPosition.y);
-                scrollRect.velocity = Vector2.zero;
+                _scrollRect.velocity = Vector2.zero;
             }
         }
 
         private void CollectObject(IMappedObject target)
         {
             if (target is IReusableMappedObject reusable) reusable.Deactivate();
-            inactiveMarked.Add(target.Mapper.Get());
+            _inactiveMarked.Add(target.Mapper.Get());
 
-            if (target is T1) cachedObjects[typeof(T1)].Add(target);
-            if (target is T2) cachedObjects[typeof(T2)].Add(target);
-            if (target is T3) cachedObjects[typeof(T3)].Add(target);
+            if (target is T1) _cachedObjects[typeof(T1)].Add(target);
+            if (target is T2) _cachedObjects[typeof(T2)].Add(target);
+            if (target is T3) _cachedObjects[typeof(T3)].Add(target);
         }
 
         private (RectTransform, IMappedObject) GetOrCreateNewObject<T>(T original, Action<T> contentCallback, float position) where T : IMappedObject, new()
         {
-            var cache = cachedObjects[typeof(T)];
+            var cache = _cachedObjects[typeof(T)];
             T newObject;
             if (cache.Count > 0)
             {
@@ -1230,11 +1160,11 @@ namespace AnKuchen.KuchenList
             }
 
             var newRectTransform = newObject.Mapper.Get<RectTransform>();
-            newRectTransform.SetParent(scrollRect.content);
+            newRectTransform.SetParent(_scrollRect.content);
             var newGameObject = newObject.Mapper.Get();
-            if (inactiveMarked.Contains(newGameObject))
+            if (_inactiveMarked.Contains(newGameObject))
             {
-                inactiveMarked.Remove(newGameObject);
+                _inactiveMarked.Remove(newGameObject);
             }
             else
             {
@@ -1243,7 +1173,7 @@ namespace AnKuchen.KuchenList
 
             var p = newRectTransform.anchoredPosition;
             var r = newRectTransform.rect;
-            newRectTransform.anchoredPosition = new Vector3((scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
+            newRectTransform.anchoredPosition = new Vector3((_scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
 
             if (newObject is IReusableMappedObject reusable) reusable.Activate();
             contentCallback(newObject);
@@ -1251,14 +1181,11 @@ namespace AnKuchen.KuchenList
             return (newRectTransform, newObject);
         }
 
-        public IListContentEditor<T1, T2, T3> Edit(EditMode editMode = EditMode.Clear)
-        {
-            return new ListContentEditor(this, editMode);
-        }
+        public IListContentEditor<T1, T2, T3> Edit(EditMode editMode = EditMode.Clear) { return new ListContentEditor(this, editMode); }
 
         public class ListContentEditor : IListContentEditor<T1, T2, T3>
         {
-            private readonly HorizontalList<T1, T2, T3> parent;
+            private readonly HorizontalList<T1, T2, T3> _parent;
             public List<UIFactory<T1, T2, T3>> Contents { get; set; }
             public float Spacing { get; set; }
             public Margin Margin { get; set; }
@@ -1266,10 +1193,10 @@ namespace AnKuchen.KuchenList
 
             public ListContentEditor(HorizontalList<T1, T2, T3> parent, EditMode editMode)
             {
-                this.parent = parent;
-                Contents = parent.contents;
+                this._parent = parent;
+                Contents = parent._contents;
                 Spacing = parent.Spacing;
-                Margin = parent.margin;
+                Margin = parent._margin;
                 SpareElement = parent.SpareElement;
 
                 if (editMode == EditMode.Clear) Contents.Clear();
@@ -1277,57 +1204,48 @@ namespace AnKuchen.KuchenList
 
             public void Dispose()
             {
-                parent.contents = Contents;
-                parent.Spacing = Spacing;
-                parent.margin = Margin;
-                parent.SpareElement = SpareElement;
-                parent.UpdateListContents();
+                _parent._contents = Contents;
+                _parent.Spacing = Spacing;
+                _parent._margin = Margin;
+                _parent.SpareElement = SpareElement;
+                _parent.UpdateListContents();
             }
 
-            public void Add(Action<T1> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3>(factory));
-            }
+            public void Add(Action<T1> factory) { Contents.Add(new UIFactory<T1, T2, T3>(factory)); }
 
-            public void Add(Action<T2> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3>(factory));
-            }
+            public void Add(Action<T2> factory) { Contents.Add(new UIFactory<T1, T2, T3>(factory)); }
 
-            public void Add(Action<T3> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3>(factory));
-            }
-
+            public void Add(Action<T3> factory) { Contents.Add(new UIFactory<T1, T2, T3>(factory)); }
         }
 
         public void DestroyCachedGameObjects()
         {
-            foreach (var cachedObject in cachedObjects)
+            foreach (var cachedObject in _cachedObjects)
             {
                 foreach (var go in cachedObject.Value)
                 {
                     Object.Destroy(go.Mapper.Get());
                 }
+
                 cachedObject.Value.Clear();
             }
         }
 
         public Vector2? CalcScrollPosition(int index, ScrollToType type = ScrollToType.Top, float additionalSpacing = 0f)
         {
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var anchoredPosition = c.anchoredPosition;
-            var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
-            var content = contentPositions[index];
-            var contentWidth = scrollRect.content.rect.width;
-            var viewportWidth = viewportRectTransformCache.rect.width;
+            var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
+            var content = _contentPositions[index];
+            var contentWidth = _scrollRect.content.rect.width;
+            var viewportWidth = _viewportRectTransformCache.rect.width;
             if (viewportWidth > contentWidth) return null;
 
             if (c.pivot.x > 1f - 0.0001f)
             {
-                var p = - scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
+                var p = -scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
                 var limitMin = viewportWidth / 2f;
-                var limitMax = - limitMin + contentWidth;
+                var limitMax = -limitMin + contentWidth;
                 var top = Mathf.Clamp(p - Spacing - additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p - viewportWidth + content.Item2 + Spacing + additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p - (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -1347,8 +1265,8 @@ namespace AnKuchen.KuchenList
             if (c.pivot.x < 0f + 0.0001f)
             {
                 var p = scrollRectSizeDeltaX - content.Item1;
-                var limitMax = - viewportWidth / 2f;
-                var limitMin = - limitMax - contentWidth;
+                var limitMax = -viewportWidth / 2f;
+                var limitMin = -limitMax - contentWidth;
                 var top = Mathf.Clamp(p + Spacing + additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p + viewportWidth - content.Item2 - Spacing - additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p + (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -1372,116 +1290,104 @@ namespace AnKuchen.KuchenList
         {
             var scrollPosition = CalcScrollPosition(index, type, additionalSpacing);
             if (scrollPosition != null) ContentRectTransform.anchoredPosition = scrollPosition.Value;
-            scrollRect.velocity = Vector2.zero;
+            _scrollRect.velocity = Vector2.zero;
         }
 
         public void UpdateAllElements()
         {
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var map = tmp.Value;
                 CollectObject(map);
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         public void UpdateElement(int index)
         {
-            if (!createdObjects.ContainsKey(index)) return;
-            CollectObject(createdObjects[index]);
-            createdObjects.Remove(index);
+            if (!_createdObjects.ContainsKey(index)) return;
+            CollectObject(_createdObjects[index]);
+            _createdObjects.Remove(index);
         }
     }
 
     public class HorizontalList<T1, T2, T3, T4> : IKuchenList
         where T1 : IMappedObject, new() where T2 : IMappedObject, new() where T3 : IMappedObject, new() where T4 : IMappedObject, new()
     {
-        private readonly ScrollRect scrollRect;
-        private readonly T1 original1;
-        private readonly T2 original2;
-        private readonly T3 original3;
-        private readonly T4 original4;
-        private readonly (string Name, float Size)[] originalInfoCache;
-        private List<UIFactory<T1, T2, T3, T4>> contents = new List<UIFactory<T1, T2, T3, T4>>();
-        private readonly List<(float, float)> contentPositions = new List<(float, float)>();
-        private readonly Dictionary<int, IMappedObject> createdObjects = new Dictionary<int, IMappedObject>();
-        private readonly Dictionary<Type, List<IMappedObject>> cachedObjects = new Dictionary<Type, List<IMappedObject>>();
-        private readonly RectTransform viewportRectTransformCache;
-        private readonly ListAdditionalInfo additionalInfo;
+        private readonly ScrollRect _scrollRect;
+        private readonly T1 _original1;
+        private readonly T2 _original2;
+        private readonly T3 _original3;
+        private readonly T4 _original4;
+        private readonly (string Name, float Size)[] _originalInfoCache;
+        private List<UIFactory<T1, T2, T3, T4>> _contents = new List<UIFactory<T1, T2, T3, T4>>();
+        private readonly List<(float, float)> _contentPositions = new List<(float, float)>();
+        private readonly Dictionary<int, IMappedObject> _createdObjects = new Dictionary<int, IMappedObject>();
+        private readonly Dictionary<Type, List<IMappedObject>> _cachedObjects = new Dictionary<Type, List<IMappedObject>>();
+        private readonly RectTransform _viewportRectTransformCache;
+        private readonly ListAdditionalInfo _additionalInfo;
         public float Spacing { get; private set; }
         public int SpareElement { get; private set; }
-        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => createdObjects;
-        public int ContentsCount => contents.Count;
-        public ScrollRect ScrollRect => scrollRect;
-        public RectTransform ContentRectTransform => scrollRect.content;
+        public IReadOnlyDictionary<int, IMappedObject> CreatedObjects => _createdObjects;
+        public int ContentsCount => _contents.Count;
+        public ScrollRect ScrollRect => _scrollRect;
+        public RectTransform ContentRectTransform => _scrollRect.content;
         public Action<int, IMappedObject> OnCreateObject { get; set; }
-        public IMappedObject[] MappedObjects => new[]{
-            (IMappedObject) original1,
-            (IMappedObject) original2,
-            (IMappedObject) original3,
-            (IMappedObject) original4,
-        };
+        public IMappedObject[] MappedObjects => new[] {(IMappedObject) _original1, (IMappedObject) _original2, (IMappedObject) _original3, (IMappedObject) _original4,};
 
-        public T1 Original1 => original1;
-        public T2 Original2 => original2;
-        public T3 Original3 => original3;
-        public T4 Original4 => original4;
+        public T1 Original1 => _original1;
+        public T2 Original2 => _original2;
+        public T3 Original3 => _original3;
+        public T4 Original4 => _original4;
 
-        private Margin margin = new Margin();
-        public IReadonlyMargin Margin => margin;
+        private Margin _margin = new Margin();
+        public IReadonlyMargin Margin => _margin;
 
-        private readonly HashSet<GameObject> inactiveMarked = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _inactiveMarked = new HashSet<GameObject>();
 
-        public float NormalizedPosition
-        {
-            get => scrollRect.horizontalNormalizedPosition;
-            set => scrollRect.horizontalNormalizedPosition = value;
-        }
+        public float NormalizedPosition { get => _scrollRect.horizontalNormalizedPosition; set => _scrollRect.horizontalNormalizedPosition = value; }
 
         public HorizontalList(ScrollRect scrollRect, T1 original1, T2 original2, T3 original3, T4 original4)
         {
-            this.scrollRect = scrollRect;
+            this._scrollRect = scrollRect;
 
-            originalInfoCache = new (string Name, float Size)[4];
+            _originalInfoCache = new (string Name, float Size)[4];
 
-            this.original1 = original1;
-            this.original1.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T1), new List<IMappedObject>());
-            originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
+            this._original1 = original1;
+            this._original1.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T1), new List<IMappedObject>());
+            _originalInfoCache[0] = (original1.Mapper.Get().name, original1.Mapper.Get<RectTransform>().rect.width);
 
-            this.original2 = original2;
-            this.original2.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T2), new List<IMappedObject>());
-            originalInfoCache[1] = (original2.Mapper.Get().name, original2.Mapper.Get<RectTransform>().rect.width);
+            this._original2 = original2;
+            this._original2.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T2), new List<IMappedObject>());
+            _originalInfoCache[1] = (original2.Mapper.Get().name, original2.Mapper.Get<RectTransform>().rect.width);
 
-            this.original3 = original3;
-            this.original3.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T3), new List<IMappedObject>());
-            originalInfoCache[2] = (original3.Mapper.Get().name, original3.Mapper.Get<RectTransform>().rect.width);
+            this._original3 = original3;
+            this._original3.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T3), new List<IMappedObject>());
+            _originalInfoCache[2] = (original3.Mapper.Get().name, original3.Mapper.Get<RectTransform>().rect.width);
 
-            this.original4 = original4;
-            this.original4.Mapper.Get().SetActive(false);
-            cachedObjects.Add(typeof(T4), new List<IMappedObject>());
-            originalInfoCache[3] = (original4.Mapper.Get().name, original4.Mapper.Get<RectTransform>().rect.width);
+            this._original4 = original4;
+            this._original4.Mapper.Get().SetActive(false);
+            _cachedObjects.Add(typeof(T4), new List<IMappedObject>());
+            _originalInfoCache[3] = (original4.Mapper.Get().name, original4.Mapper.Get<RectTransform>().rect.width);
 
-            var kuchenList = this.scrollRect.gameObject.AddComponent<KuchenList>();
+            var kuchenList = this._scrollRect.gameObject.AddComponent<KuchenList>();
             kuchenList.List = new ListOperator(this);
 
             var viewport = scrollRect.viewport;
-            viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
+            _viewportRectTransformCache = viewport != null ? viewport : scrollRect.GetComponent<RectTransform>();
 
-            additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
+            _additionalInfo = scrollRect.GetComponent<ListAdditionalInfo>();
 
             var horizontalLayoutGroup = scrollRect.content.GetComponent<HorizontalLayoutGroup>();
             if (horizontalLayoutGroup != null)
             {
                 horizontalLayoutGroup.enabled = false;
                 Spacing = horizontalLayoutGroup.spacing;
-                margin = new Margin
-                {
-                    Left = horizontalLayoutGroup.padding.left,
-                    Right = horizontalLayoutGroup.padding.right
-                };
+                _margin = new Margin {Left = horizontalLayoutGroup.padding.left, Right = horizontalLayoutGroup.padding.right};
             }
 
             var contentSizeFitter = scrollRect.content.GetComponent<ContentSizeFitter>();
@@ -1493,31 +1399,23 @@ namespace AnKuchen.KuchenList
 
         private class ListOperator : IKuchenListMonoBehaviourBridge
         {
-            private readonly HorizontalList<T1, T2, T3, T4> list;
+            private readonly HorizontalList<T1, T2, T3, T4> _list;
 
-            public ListOperator(HorizontalList<T1, T2, T3, T4> list)
-            {
-                this.list = list;
-            }
+            public ListOperator(HorizontalList<T1, T2, T3, T4> list) { this._list = list; }
 
-            public void DeactivateAll()
-            {
-                list.DeactivateAll();
-            }
+            public void DeactivateAll() { _list.DeactivateAll(); }
 
-            public void UpdateView()
-            {
-                list.UpdateView();
-            }
+            public void UpdateView() { _list.UpdateView(); }
         }
 
         private void DeactivateAll()
         {
-            foreach (var item in createdObjects.Values)
+            foreach (var item in _createdObjects.Values)
             {
                 if (item is IReusableMappedObject reusable) reusable.Deactivate();
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         // RectTransformUtility.CalculateRelativeRectTransformBoundsを使うと、
@@ -1528,7 +1426,7 @@ namespace AnKuchen.KuchenList
             componentsInChildren.Add(child.GetComponent<RectTransform>());
             foreach (Transform a in child)
             {
-                if (inactiveMarked.Contains(a.gameObject)) continue;
+                if (_inactiveMarked.Contains(a.gameObject)) continue;
                 componentsInChildren.Add(a.GetComponent<RectTransform>());
             }
 
@@ -1556,8 +1454,8 @@ namespace AnKuchen.KuchenList
 
         private void UpdateView()
         {
-            var displayRect = viewportRectTransformCache.rect;
-            var contentRect = CalculateRelativeRectTransformBounds(viewportRectTransformCache, scrollRect.content);
+            var displayRect = _viewportRectTransformCache.rect;
+            var contentRect = CalculateRelativeRectTransformBounds(_viewportRectTransformCache, _scrollRect.content);
             var start = contentRect.max.x - displayRect.max.x;
             var displayRectWidth = displayRect.width;
             var end = start + displayRectWidth;
@@ -1569,25 +1467,25 @@ namespace AnKuchen.KuchenList
 
             var displayMinIndex = int.MaxValue;
             var displayMaxIndex = int.MinValue;
-            for (var i = 0; i < contentPositions.Count; ++i)
+            for (var i = 0; i < _contentPositions.Count; ++i)
             {
-                if (start > contentPositions[i].Item1) continue;
-                if (contentPositions[i].Item1 > end) break;
+                if (start > _contentPositions[i].Item1) continue;
+                if (_contentPositions[i].Item1 > end) break;
                 displayMinIndex = Mathf.Min(displayMinIndex, i);
                 displayMaxIndex = Mathf.Max(displayMaxIndex, i);
             }
 
             if (displayMinIndex == int.MaxValue)
             {
-                displayMinIndex = contentPositions.Count - 1;
-                displayMaxIndex = contentPositions.Count - 1;
+                displayMinIndex = _contentPositions.Count - 1;
+                displayMaxIndex = _contentPositions.Count - 1;
             }
 
             displayMinIndex = Mathf.Max(displayMinIndex - 1 - SpareElement, 0);
-            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, contents.Count - 1);
+            displayMaxIndex = Mathf.Min(displayMaxIndex + SpareElement, _contents.Count - 1);
 
             var removedList = new List<int>();
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var index = tmp.Key;
                 var map = tmp.Value;
@@ -1599,73 +1497,76 @@ namespace AnKuchen.KuchenList
 
             foreach (var removed in removedList)
             {
-                createdObjects.Remove(removed);
+                _createdObjects.Remove(removed);
             }
 
             for (var i = displayMinIndex; i <= displayMaxIndex; ++i)
             {
-                if (createdObjects.ContainsKey(i)) continue;
+                if (_createdObjects.ContainsKey(i)) continue;
 
                 RectTransform newObject = null;
                 IMappedObject newMappedObject = null;
-                var content = contents[i];
-                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original1, content.Callback1, contentPositions[i].Item1);
-                if (content.Callback2 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original2, content.Callback2, contentPositions[i].Item1);
-                if (content.Callback3 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original3, content.Callback3, contentPositions[i].Item1);
-                if (content.Callback4 != null) (newObject, newMappedObject) = GetOrCreateNewObject(original4, content.Callback4, contentPositions[i].Item1);
+                var content = _contents[i];
+                if (content.Callback1 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original1, content.Callback1, _contentPositions[i].Item1);
+                if (content.Callback2 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original2, content.Callback2, _contentPositions[i].Item1);
+                if (content.Callback3 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original3, content.Callback3, _contentPositions[i].Item1);
+                if (content.Callback4 != null) (newObject, newMappedObject) = GetOrCreateNewObject(_original4, content.Callback4, _contentPositions[i].Item1);
                 if (content.Spacer != null) continue;
                 if (newObject == null) throw new Exception($"newObject == null");
-                createdObjects[i] = newMappedObject;
+                _createdObjects[i] = newMappedObject;
                 OnCreateObject?.Invoke(i, newMappedObject);
             }
 
-            foreach (var a in inactiveMarked) a.SetActive(false);
-            inactiveMarked.Clear();
+            foreach (var a in _inactiveMarked) a.SetActive(false);
+            _inactiveMarked.Clear();
         }
 
         private void UpdateListContents()
         {
             // clear elements
-            var isFirst = createdObjects.Values.Count == 0;
-            foreach (var map in createdObjects.Values)
+            var isFirst = _createdObjects.Values.Count == 0;
+            foreach (var map in _createdObjects.Values)
             {
                 CollectObject(map);
             }
-            createdObjects.Clear();
-            contentPositions.Clear();
+
+            _createdObjects.Clear();
+            _contentPositions.Clear();
 
             // create elements
             var calcPosition = Margin.Left;
             var prevElementName = "";
             var elementName = "";
-            var specialSpacings = (additionalInfo != null && additionalInfo.specialSpacings != null)
-                ? additionalInfo.specialSpacings
-                : new SpecialSpacing[] { };
-            for (var i = 0; i < contents.Count; ++i)
+            var specialSpacings = (_additionalInfo != null && _additionalInfo.specialSpacings != null) ? _additionalInfo.specialSpacings : new SpecialSpacing[] { };
+            for (var i = 0; i < _contents.Count; ++i)
             {
-                var content = contents[i];
+                var content = _contents[i];
                 var elementSize = 0f;
 
                 if (content.Callback1 != null)
                 {
-                    elementName = originalInfoCache[0].Name;
-                    elementSize = originalInfoCache[0].Size;
+                    elementName = _originalInfoCache[0].Name;
+                    elementSize = _originalInfoCache[0].Size;
                 }
+
                 if (content.Callback2 != null)
                 {
-                    elementName = originalInfoCache[1].Name;
-                    elementSize = originalInfoCache[1].Size;
+                    elementName = _originalInfoCache[1].Name;
+                    elementSize = _originalInfoCache[1].Size;
                 }
+
                 if (content.Callback3 != null)
                 {
-                    elementName = originalInfoCache[2].Name;
-                    elementSize = originalInfoCache[2].Size;
+                    elementName = _originalInfoCache[2].Name;
+                    elementSize = _originalInfoCache[2].Size;
                 }
+
                 if (content.Callback4 != null)
                 {
-                    elementName = originalInfoCache[3].Name;
-                    elementSize = originalInfoCache[3].Size;
+                    elementName = _originalInfoCache[3].Name;
+                    elementSize = _originalInfoCache[3].Size;
                 }
+
                 if (content.Spacer != null)
                 {
                     elementName = "";
@@ -1678,42 +1579,43 @@ namespace AnKuchen.KuchenList
                 if (spacing == null && i != 0) spacing = Spacing;
 
                 calcPosition += spacing ?? 0f;
-                contentPositions.Add((calcPosition, elementSize));
+                _contentPositions.Add((calcPosition, elementSize));
                 calcPosition += elementSize;
 
                 prevElementName = elementName;
             }
+
             calcPosition += Margin.Right;
 
             // calc content size
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var s = c.sizeDelta;
             c.sizeDelta = new Vector2(calcPosition, s.y);
 
             var anchoredPosition = c.anchoredPosition;
             if (isFirst)
             {
-                var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
+                var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
                 if (c.pivot.x > 1f - 0.0001f) c.anchoredPosition = new Vector2(-scrollRectSizeDeltaX, anchoredPosition.y);
                 if (c.pivot.x < 0f + 0.0001f) c.anchoredPosition = new Vector2(scrollRectSizeDeltaX, anchoredPosition.y);
-                scrollRect.velocity = Vector2.zero;
+                _scrollRect.velocity = Vector2.zero;
             }
         }
 
         private void CollectObject(IMappedObject target)
         {
             if (target is IReusableMappedObject reusable) reusable.Deactivate();
-            inactiveMarked.Add(target.Mapper.Get());
+            _inactiveMarked.Add(target.Mapper.Get());
 
-            if (target is T1) cachedObjects[typeof(T1)].Add(target);
-            if (target is T2) cachedObjects[typeof(T2)].Add(target);
-            if (target is T3) cachedObjects[typeof(T3)].Add(target);
-            if (target is T4) cachedObjects[typeof(T4)].Add(target);
+            if (target is T1) _cachedObjects[typeof(T1)].Add(target);
+            if (target is T2) _cachedObjects[typeof(T2)].Add(target);
+            if (target is T3) _cachedObjects[typeof(T3)].Add(target);
+            if (target is T4) _cachedObjects[typeof(T4)].Add(target);
         }
 
         private (RectTransform, IMappedObject) GetOrCreateNewObject<T>(T original, Action<T> contentCallback, float position) where T : IMappedObject, new()
         {
-            var cache = cachedObjects[typeof(T)];
+            var cache = _cachedObjects[typeof(T)];
             T newObject;
             if (cache.Count > 0)
             {
@@ -1726,11 +1628,11 @@ namespace AnKuchen.KuchenList
             }
 
             var newRectTransform = newObject.Mapper.Get<RectTransform>();
-            newRectTransform.SetParent(scrollRect.content);
+            newRectTransform.SetParent(_scrollRect.content);
             var newGameObject = newObject.Mapper.Get();
-            if (inactiveMarked.Contains(newGameObject))
+            if (_inactiveMarked.Contains(newGameObject))
             {
-                inactiveMarked.Remove(newGameObject);
+                _inactiveMarked.Remove(newGameObject);
             }
             else
             {
@@ -1739,7 +1641,7 @@ namespace AnKuchen.KuchenList
 
             var p = newRectTransform.anchoredPosition;
             var r = newRectTransform.rect;
-            newRectTransform.anchoredPosition = new Vector3((scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
+            newRectTransform.anchoredPosition = new Vector3((_scrollRect.content.sizeDelta.x / -2f) + position + r.width / 2f, p.y, 0f);
 
             if (newObject is IReusableMappedObject reusable) reusable.Activate();
             contentCallback(newObject);
@@ -1747,14 +1649,11 @@ namespace AnKuchen.KuchenList
             return (newRectTransform, newObject);
         }
 
-        public IListContentEditor<T1, T2, T3, T4> Edit(EditMode editMode = EditMode.Clear)
-        {
-            return new ListContentEditor(this, editMode);
-        }
+        public IListContentEditor<T1, T2, T3, T4> Edit(EditMode editMode = EditMode.Clear) { return new ListContentEditor(this, editMode); }
 
         public class ListContentEditor : IListContentEditor<T1, T2, T3, T4>
         {
-            private readonly HorizontalList<T1, T2, T3, T4> parent;
+            private readonly HorizontalList<T1, T2, T3, T4> _parent;
             public List<UIFactory<T1, T2, T3, T4>> Contents { get; set; }
             public float Spacing { get; set; }
             public Margin Margin { get; set; }
@@ -1762,10 +1661,10 @@ namespace AnKuchen.KuchenList
 
             public ListContentEditor(HorizontalList<T1, T2, T3, T4> parent, EditMode editMode)
             {
-                this.parent = parent;
-                Contents = parent.contents;
+                this._parent = parent;
+                Contents = parent._contents;
                 Spacing = parent.Spacing;
-                Margin = parent.margin;
+                Margin = parent._margin;
                 SpareElement = parent.SpareElement;
 
                 if (editMode == EditMode.Clear) Contents.Clear();
@@ -1773,62 +1672,50 @@ namespace AnKuchen.KuchenList
 
             public void Dispose()
             {
-                parent.contents = Contents;
-                parent.Spacing = Spacing;
-                parent.margin = Margin;
-                parent.SpareElement = SpareElement;
-                parent.UpdateListContents();
+                _parent._contents = Contents;
+                _parent.Spacing = Spacing;
+                _parent._margin = Margin;
+                _parent.SpareElement = SpareElement;
+                _parent.UpdateListContents();
             }
 
-            public void Add(Action<T1> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3, T4>(factory));
-            }
+            public void Add(Action<T1> factory) { Contents.Add(new UIFactory<T1, T2, T3, T4>(factory)); }
 
-            public void Add(Action<T2> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3, T4>(factory));
-            }
+            public void Add(Action<T2> factory) { Contents.Add(new UIFactory<T1, T2, T3, T4>(factory)); }
 
-            public void Add(Action<T3> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3, T4>(factory));
-            }
+            public void Add(Action<T3> factory) { Contents.Add(new UIFactory<T1, T2, T3, T4>(factory)); }
 
-            public void Add(Action<T4> factory)
-            {
-                Contents.Add(new UIFactory<T1, T2, T3, T4>(factory));
-            }
-
+            public void Add(Action<T4> factory) { Contents.Add(new UIFactory<T1, T2, T3, T4>(factory)); }
         }
 
         public void DestroyCachedGameObjects()
         {
-            foreach (var cachedObject in cachedObjects)
+            foreach (var cachedObject in _cachedObjects)
             {
                 foreach (var go in cachedObject.Value)
                 {
                     Object.Destroy(go.Mapper.Get());
                 }
+
                 cachedObject.Value.Clear();
             }
         }
 
         public Vector2? CalcScrollPosition(int index, ScrollToType type = ScrollToType.Top, float additionalSpacing = 0f)
         {
-            var c = scrollRect.content;
+            var c = _scrollRect.content;
             var anchoredPosition = c.anchoredPosition;
-            var scrollRectSizeDeltaX = scrollRect.GetComponent<RectTransform>().rect.x;
-            var content = contentPositions[index];
-            var contentWidth = scrollRect.content.rect.width;
-            var viewportWidth = viewportRectTransformCache.rect.width;
+            var scrollRectSizeDeltaX = _scrollRect.GetComponent<RectTransform>().rect.x;
+            var content = _contentPositions[index];
+            var contentWidth = _scrollRect.content.rect.width;
+            var viewportWidth = _viewportRectTransformCache.rect.width;
             if (viewportWidth > contentWidth) return null;
 
             if (c.pivot.x > 1f - 0.0001f)
             {
-                var p = - scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
+                var p = -scrollRectSizeDeltaX + (contentWidth - content.Item1 - content.Item2);
                 var limitMin = viewportWidth / 2f;
-                var limitMax = - limitMin + contentWidth;
+                var limitMax = -limitMin + contentWidth;
                 var top = Mathf.Clamp(p - Spacing - additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p - viewportWidth + content.Item2 + Spacing + additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p - (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -1848,8 +1735,8 @@ namespace AnKuchen.KuchenList
             if (c.pivot.x < 0f + 0.0001f)
             {
                 var p = scrollRectSizeDeltaX - content.Item1;
-                var limitMax = - viewportWidth / 2f;
-                var limitMin = - limitMax - contentWidth;
+                var limitMax = -viewportWidth / 2f;
+                var limitMin = -limitMax - contentWidth;
                 var top = Mathf.Clamp(p + Spacing + additionalSpacing, limitMin, limitMax);
                 var bottom = Mathf.Clamp(p + viewportWidth - content.Item2 - Spacing - additionalSpacing, limitMin, limitMax);
                 var center = Mathf.Clamp(p + (viewportWidth - content.Item2) / 2f, limitMin, limitMax);
@@ -1873,25 +1760,25 @@ namespace AnKuchen.KuchenList
         {
             var scrollPosition = CalcScrollPosition(index, type, additionalSpacing);
             if (scrollPosition != null) ContentRectTransform.anchoredPosition = scrollPosition.Value;
-            scrollRect.velocity = Vector2.zero;
+            _scrollRect.velocity = Vector2.zero;
         }
 
         public void UpdateAllElements()
         {
-            foreach (var tmp in createdObjects)
+            foreach (var tmp in _createdObjects)
             {
                 var map = tmp.Value;
                 CollectObject(map);
             }
-            createdObjects.Clear();
+
+            _createdObjects.Clear();
         }
 
         public void UpdateElement(int index)
         {
-            if (!createdObjects.ContainsKey(index)) return;
-            CollectObject(createdObjects[index]);
-            createdObjects.Remove(index);
+            if (!_createdObjects.ContainsKey(index)) return;
+            CollectObject(_createdObjects[index]);
+            _createdObjects.Remove(index);
         }
     }
-
 }

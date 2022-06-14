@@ -4,7 +4,7 @@
 using System;
 using AnKuchen.Map;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
 <# for (var t = 1; t <= 4; ++t) { #>
     public class UIFactory<<#= string.Join(", ", Enumerable.Range(1, t).Select(i => $"T{i}")) #>> <#= string.Join(" ", Enumerable.Range(1, t).Select(i => $"where T{i} : IMappedObject")) #>

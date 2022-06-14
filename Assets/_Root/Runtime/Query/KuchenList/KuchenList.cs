@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
     public class KuchenList : MonoBehaviour
     {

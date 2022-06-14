@@ -1,6 +1,5 @@
-using AnKuchen.Map;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
     public interface IReusableMappedObject : IMappedObject
     {

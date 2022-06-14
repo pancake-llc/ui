@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace AnKuchen.Map
+namespace Pancake.UIQuery
 {
     public class Mapper : IMapper
     {

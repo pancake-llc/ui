@@ -1,7 +1,6 @@
 ﻿using System;
-using AnKuchen.Map;
 
-namespace AnKuchen.KuchenList
+namespace Pancake.UIQuery
 {
     public class UIFactory<T1> where T1 : IMappedObject
     {

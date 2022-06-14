@@ -2,7 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AnKuchen.AdditionalInfo
+namespace Pancake.UIQuery
 {
     [RequireComponent(typeof(ScrollRect))]
     public class ListAdditionalInfo : MonoBehaviour
