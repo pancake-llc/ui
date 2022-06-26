@@ -29,12 +29,14 @@ namespace Pancake.UI.Editor
         private SerializedProperty _scale;
         private SerializedProperty _durationDown;
         private SerializedProperty _durationUp;
+        private SerializedProperty _interpolatorUp;
+        private SerializedProperty _interpolatorDown;
         private SerializedProperty _motionUnableInteract;
         private SerializedProperty _scaleUnableInteract;
         private SerializedProperty _durationDownUnableInteract;
         private SerializedProperty _durationUpUnableInteract;
-        private SerializedProperty _tweenDown;
-        private SerializedProperty _tweenUp;
+        private SerializedProperty _interpolatorUpInteract;
+        private SerializedProperty _interpolatorDownInteract;
 
         protected override void OnEnable()
         {
@@ -60,8 +62,10 @@ namespace Pancake.UI.Editor
             _durationDownUnableInteract = serializedObject.FindProperty("motionDataUnableInteract").FindPropertyRelative("durationDown");
             _durationUpUnableInteract = serializedObject.FindProperty("motionDataUnableInteract").FindPropertyRelative("durationUp");
             _isMotionUnableInteract = serializedObject.FindProperty("isMotionUnableInteract");
-            _tweenDown = serializedObject.FindProperty("tweenDown");
-            _tweenUp = serializedObject.FindProperty("tweenUp");
+            _interpolatorUp = serializedObject.FindProperty("motionData").FindPropertyRelative("interpolatorUp");
+            _interpolatorDown = serializedObject.FindProperty("motionData").FindPropertyRelative("interpolatorDown");     
+            _interpolatorUpInteract = serializedObject.FindProperty("motionData").FindPropertyRelative("interpolatorUp");
+            _interpolatorDownInteract = serializedObject.FindProperty("motionData").FindPropertyRelative("interpolatorDown");
         }
 
         public override void OnInspectorGUI()
@@ -150,7 +154,7 @@ namespace Pancake.UI.Editor
                 _motion.enumValueIndex = EditorGUILayout.Popup(_motion.enumValueIndex, ButtonMotion);
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("  Scale", GUILayout.Width(DEFAULT_LABEL_WIDTH - 60));
+                GUILayout.Label("  Scale(%)", GUILayout.Width(DEFAULT_LABEL_WIDTH - 50));
                 GUILayout.FlexibleSpace();
                 _scale.vector2Value = EditorGUILayout.Vector2Field("", _scale.vector2Value);
 
@@ -174,12 +178,12 @@ namespace Pancake.UI.Editor
                 }
 
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label(new GUIContent("  Tween Down"), GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.PropertyField(_tweenDown, new GUIContent(""));
+                GUILayout.Label(new GUIContent("  Interpolator Down"), GUILayout.Width(DEFAULT_LABEL_WIDTH));
+                EditorGUILayout.PropertyField(_interpolatorDown, new GUIContent(""));
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label(new GUIContent("  Tween Up"), GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.PropertyField(_tweenUp, new GUIContent(""));
+                GUILayout.Label(new GUIContent("  Interpolator Up"), GUILayout.Width(DEFAULT_LABEL_WIDTH));
+                EditorGUILayout.PropertyField(_interpolatorUp, new GUIContent(""));
                 EditorGUILayout.EndHorizontal();
 
                 Uniform.SpaceTwoLine();
@@ -196,7 +200,7 @@ namespace Pancake.UI.Editor
                     _motionUnableInteract.enumValueIndex = EditorGUILayout.Popup(_motionUnableInteract.enumValueIndex, ButtonMotion);
                     EditorGUILayout.EndHorizontal();
                     EditorGUILayout.BeginHorizontal();
-                    GUILayout.Label("  Scale", GUILayout.Width(DEFAULT_LABEL_WIDTH - 60));
+                    GUILayout.Label("  Scale(%)", GUILayout.Width(DEFAULT_LABEL_WIDTH - 50));
                     _scaleUnableInteract.vector2Value = EditorGUILayout.Vector2Field("", _scaleUnableInteract.vector2Value);
                     EditorGUILayout.EndHorizontal();
 
@@ -216,11 +220,17 @@ namespace Pancake.UI.Editor
                             EditorGUILayout.EndHorizontal();
                             break;
                     }
-
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.Label(new GUIContent("  Interpolator Down"), GUILayout.Width(DEFAULT_LABEL_WIDTH));
+                    EditorGUILayout.PropertyField(_interpolatorDownInteract, new GUIContent(""));
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.Label(new GUIContent("  Interpolator Up"), GUILayout.Width(DEFAULT_LABEL_WIDTH));
+                    EditorGUILayout.PropertyField(_interpolatorUpInteract, new GUIContent(""));
+                    EditorGUILayout.EndHorizontal();
+                    
                     Uniform.SpaceOneLine();
                 }
-
-                if ((UIButton) target is var btn && !Application.isPlaying) btn.CalculateTween();
             }
 
 

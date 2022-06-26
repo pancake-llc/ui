@@ -8,20 +8,27 @@
       "hash": "33d32baea4d50040e0601b725a694dcf3dcf6640"
     },
     "com.pancake.common": {
-      "version": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.2.1",
+      "version": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.2.9",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.0.1"
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
-      "hash": "5f1243d9d1ce12899836cfce707222a4be13f1fd"
+      "hash": "6378a3f2b98658182f498954062771466478d435"
     },
     "com.pancake.tween": {
-      "version": "https://github.com/pancake-llc/tween.git?path=Assets/_Root#1.3.7",
+      "version": "https://github.com/pancake-llc/tween.git?path=Assets/_Root#1.4.0",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "59c50215e13d51a431e74890add43c3f4b4d7f73"
+      "hash": "61323c5a6f8a5ca701c69ae86c0d11e2aefeab7b"
+    },
+    "com.system-community.systemruntimecompilerservicesunsafe": {
+      "version": "https://github.com/system-community/SystemRuntimeCompilerServicesUnsafe.git?path=Assets/_Root#4.5.3",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c9a633f2999d98b73fb9798fb7e4a411bc431147"
     },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
@@ -56,7 +63,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.nuget.newtonsoft-json": {
-      "version": "3.0.1",
+      "version": "3.0.2",
       "depth": 1,
       "source": "registry",
       "dependencies": {},

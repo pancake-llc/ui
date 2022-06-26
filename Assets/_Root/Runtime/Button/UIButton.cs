@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using MEC;
 using Pancake.Common;
 using Pancake.Tween;
 using UnityEngine;
@@ -12,7 +13,6 @@ using UnityEngine.UI;
 namespace Pancake.UI
 {
     [RequireComponent(typeof(Image))]
-    [RequireComponent(typeof(TweenPlayer))]
     public class UIButton : Button, IButton, IButtonAffect
     {
         private const float DOUBLE_CLICK_TIME_INTERVAL = 0.2f;
@@ -25,6 +25,8 @@ namespace Pancake.UI
             public EButtonMotion motion = EButtonMotion.Normal;
             public float durationDown = 0.1f;
             public float durationUp = 0.1f;
+            public Interpolator interpolatorDown;
+            public Interpolator interpolatorUp;
         }
 
         #region Property
@@ -42,34 +44,24 @@ namespace Pancake.UI
         [SerializeField] private bool isMotionUnableInteract;
         [SerializeField] private bool isAffectToSelf = true;
         [SerializeField] private Transform affectObject;
-        [SerializeField] private MotionData motionData = new MotionData {scale = new Vector2(0.92f, 0.92f)};
-        [SerializeField] private MotionData motionDataUnableInteract = new MotionData {scale = new Vector2(1.15f, 1.15f)};
-        [SerializeField] private TweenPlayer tweenUp;
-        [SerializeField] private TweenPlayer tweenDown;
+        [SerializeField] private MotionData motionData = new MotionData {scale = new Vector2(0.92f, 0.92f), motion = EButtonMotion.Uniform};
+        [SerializeField] private MotionData motionDataUnableInteract = new MotionData {scale = new Vector2(1.15f, 1.15f), motion = EButtonMotion.Late};
 
-        private Coroutine _routineLongClick;
-        private Coroutine _routineMultiple;
+        private CoroutineHandle _routineLongClick;
+        private CoroutineHandle _routineMultiple;
         private bool _clickedOnce; // marked as true after one click. (only check for double click)
         private bool _longClickDone; // marks as true after long click
         private float _doubleClickTimer; // calculate the time interval between two sequential clicks. (use for double click)
         private float _longClickTimer; // calculate how long was the button pressed
         private Vector2 _endValue;
+        private bool _isCompletePhaseUp;
+        private bool _isCompletePhaseDown;
 
         #endregion
 
         #region Implementation of IButton
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// Editor only
-        /// </summary>
-        public TweenPlayer TweenUp { get => tweenUp; set => tweenUp = value; }
-
-        /// <summary>
-        /// Editor only
-        /// </summary>
-        public TweenPlayer TweenDown { get => tweenDown; set => tweenDown = value; }
-
         /// <summary>
         /// Editor only
         /// </summary>
@@ -103,19 +95,6 @@ namespace Pancake.UI
         {
             base.Start();
             DefaultScale = AffectObject.localScale;
-            if (tweenDown != null)
-            {
-                tweenDown.enabled = false;
-                tweenDown.onForwardArrived += OnCompletePhaseDown;
-            }
-
-            if (tweenUp != null)
-            {
-                tweenUp.enabled = false;
-                tweenUp.onForwardArrived += OnCompletePhaseUp;
-            }
-
-            CalculateTween();
         }
 
 #if UNITY_EDITOR
@@ -134,10 +113,8 @@ namespace Pancake.UI
         protected override void OnDisable()
         {
             base.OnDisable();
-
-            if (_routineMultiple != null) StopCoroutine(_routineMultiple);
-            if (_routineLongClick != null) StopCoroutine(_routineLongClick);
-
+            Timing.KillCoroutines(_routineMultiple);
+            Timing.KillCoroutines(_routineLongClick);
             interactable = true;
             _clickedOnce = false;
             _longClickDone = false;
@@ -220,8 +197,7 @@ namespace Pancake.UI
 
         #region single click
 
-        private bool IsDetectSingleClick =>
-            clickType == EButtonClickType.OnlySingleClick || clickType == EButtonClickType.Instant || clickType == EButtonClickType.LongClick;
+        private bool IsDetectSingleClick => clickType is EButtonClickType.OnlySingleClick or EButtonClickType.Instant || clickType == EButtonClickType.LongClick;
 
         private void StartClick(PointerEventData eventData)
         {
@@ -245,7 +221,7 @@ namespace Pancake.UI
             {
                 if (!interactable) yield break;
 
-                _routineMultiple = StartCoroutine(IeDisableButton(timeDisableButton));
+                _routineMultiple = Timing.RunCoroutine(IeDisableButton(timeDisableButton));
                 yield break;
             }
 
@@ -314,13 +290,13 @@ namespace Pancake.UI
         /// waiting check long click done
         /// </summary>
         /// <returns></returns>
-        private IEnumerator IeExcuteLongClick()
+        private IEnumerator<float> IeExcuteLongClick()
         {
             while (_longClickTimer < longClickInterval)
             {
                 if (ignoreTimeScale) _longClickTimer += Time.unscaledDeltaTime;
                 else _longClickTimer += Time.deltaTime;
-                yield return null;
+                yield return Timing.WaitForOneFrame;
             }
 
             ExecuteLongClick();
@@ -344,7 +320,7 @@ namespace Pancake.UI
             if (!IsDetectLongCLick) return;
             _longClickDone = false;
             _longClickTimer = 0;
-            if (_routineLongClick != null) StopCoroutine(_routineLongClick);
+            Timing.KillCoroutines(_routineLongClick);
         }
 
         /// <summary>
@@ -354,7 +330,7 @@ namespace Pancake.UI
         {
             if (_longClickDone || !IsDetectLongCLick) return;
             ResetLongClick();
-            _routineLongClick = StartCoroutine(IeExcuteLongClick());
+            _routineLongClick = Timing.RunCoroutine(IeExcuteLongClick());
         }
 
         /// <summary>
@@ -370,10 +346,10 @@ namespace Pancake.UI
 
         #region multiple click
 
-        private IEnumerator IeDisableButton(float duration)
+        private IEnumerator<float> IeDisableButton(float duration)
         {
             interactable = false;
-            yield return new WaitForSeconds(duration);
+            yield return Timing.WaitForSeconds(duration);
             interactable = true;
         }
 
@@ -392,17 +368,31 @@ namespace Pancake.UI
                     AffectObject.localScale = DefaultScale;
                     break;
                 case EButtonMotion.Normal:
-                    tweenUp.normalizedTime = 0;
-                    await UniTask.WaitUntil(() => !tweenDown.enabled);
-                    tweenUp.enabled = true;
+                    _isCompletePhaseUp = false;
+                    AffectObject.TweenLocalScale(DefaultScale, motionData.durationUp)
+                        .SetEase(motionData.interpolatorUp)
+                        .OnComplete(() => _isCompletePhaseUp = true)
+                        .Play();
+                    await UniTask.WaitUntil(() => _isCompletePhaseUp);
                     break;
                 case EButtonMotion.Uniform:
                     break;
                 case EButtonMotion.Late:
-                    tweenDown.normalizedTime = 0f;
-                    tweenUp.normalizedTime = 0f;
-                    tweenDown.enabled = true;
-                    tweenUp.enabled = true;
+                    _isCompletePhaseUp = false;
+                    _isCompletePhaseDown = false;
+                    _endValue = new Vector3(DefaultScale.x * motionData.scale.x, DefaultScale.y * motionData.scale.y);
+
+                    AffectObject.TweenLocalScale(_endValue, motionData.durationDown)
+                        .SetEase(motionData.interpolatorDown)
+                        .OnComplete(() => _isCompletePhaseDown = true)
+                        .Play();
+                    await UniTask.WaitUntil(() => _isCompletePhaseDown);
+
+                    AffectObject.TweenLocalScale(DefaultScale, motionData.durationUp)
+                        .SetEase(motionData.interpolatorUp)
+                        .OnComplete(() => _isCompletePhaseUp = true)
+                        .Play();
+                    await UniTask.WaitUntil(() => _isCompletePhaseUp);
                     break;
             }
         }
@@ -411,120 +401,41 @@ namespace Pancake.UI
         /// 
         /// </summary>
         /// <param name="data"></param>
-        public void MotionDown(MotionData data)
+        public async void MotionDown(MotionData data)
         {
+            _endValue = new Vector3(DefaultScale.x * motionData.scale.x, DefaultScale.y * motionData.scale.y);
             switch (data.motion)
             {
                 case EButtonMotion.Immediate:
                     AffectObject.localScale = _endValue;
                     break;
                 case EButtonMotion.Normal:
-                    tweenDown.enabled = true;
-                    tweenDown.normalizedTime = 0f;
-                    tweenUp.enabled = false;
+                    _isCompletePhaseDown = false;
+                    AffectObject.TweenLocalScale(_endValue, motionData.durationDown)
+                        .SetEase(motionData.interpolatorDown)
+                        .OnComplete(() => _isCompletePhaseDown = true)
+                        .Play();
+                    await UniTask.WaitUntil(() => _isCompletePhaseDown);
                     break;
                 case EButtonMotion.Uniform:
-                    tweenDown.normalizedTime = 0f;
-                    tweenUp.normalizedTime = 0f;
-                    tweenDown.enabled = true;
-                    tweenUp.enabled = true;
+                    _isCompletePhaseUp = false;
+                    _isCompletePhaseDown = false;
+                    AffectObject.TweenLocalScale(_endValue, motionData.durationDown)
+                        .SetEase(motionData.interpolatorDown)
+                        .OnComplete(() => _isCompletePhaseDown = true)
+                        .Play();
+                    await UniTask.WaitUntil(() => _isCompletePhaseDown);
+
+                    AffectObject.TweenLocalScale(DefaultScale, motionData.durationUp)
+                        .SetEase(motionData.interpolatorUp)
+                        .OnComplete(() => _isCompletePhaseUp = true)
+                        .Play();
+                    await UniTask.WaitUntil(() => _isCompletePhaseUp);
                     break;
                 case EButtonMotion.Late:
                     break;
             }
         }
-
-        public void CalculateTween()
-        {
-            if (tweenDown == null || tweenUp == null || tweenDown.isActiveAndEnabled || tweenUp.isActiveAndEnabled || AffectObject == null) return;
-            DefaultScale = AffectObject.localScale;
-            var tweenScaleDown = tweenDown.GetAnimation<TweenTransformScale>();
-            var tweenScaleUp = tweenUp.GetAnimation<TweenTransformScale>();
-            if (interactable)
-            {
-                _endValue = new Vector3(DefaultScale.x * motionData.scale.x, DefaultScale.y * motionData.scale.y);
-                switch (motionData.motion)
-                {
-                    case EButtonMotion.Normal:
-                        tweenDown.duration = motionData.durationDown;
-                        tweenUp.duration = motionData.durationUp;
-                        tweenScaleDown.minNormalizedTime = 0;
-                        tweenScaleDown.maxNormalizedTime = 1;
-                        tweenScaleUp.minNormalizedTime = 0;
-                        tweenScaleUp.maxNormalizedTime = 1;
-                        break;
-                    case EButtonMotion.Uniform:
-                        tweenDown.duration = motionData.durationDown;
-                        tweenUp.duration = motionData.durationDown + motionData.durationUp;
-                        tweenScaleDown.minNormalizedTime = 0;
-                        float value = motionData.durationDown.Remap(0, tweenUp.duration, 0f, 1f);
-                        tweenScaleDown.maxNormalizedTime = value;
-                        tweenScaleUp.minNormalizedTime = value;
-                        tweenScaleUp.maxNormalizedTime = 1;
-                        break;
-                }
-
-                if (!Application.isPlaying)
-                {
-                    tweenScaleDown.from = AffectObject != null ? AffectObject.localScale : DefaultScale;
-                    tweenScaleUp.to = AffectObject != null ? AffectObject.localScale : DefaultScale;
-                    tweenScaleDown.target = AffectObject;
-                    tweenScaleUp.target = AffectObject;
-                }
-                else
-                {
-                    tweenScaleDown.from = DefaultScale;
-                    tweenScaleUp.to = DefaultScale;
-                }
-
-                tweenScaleDown.to = _endValue;
-                tweenScaleUp.from = _endValue;
-            }
-            else
-            {
-                _endValue = new Vector3(DefaultScale.x * motionDataUnableInteract.scale.x, DefaultScale.y * motionDataUnableInteract.scale.y);
-                switch (motionDataUnableInteract.motion)
-                {
-                    case EButtonMotion.Normal:
-                        tweenDown.duration = motionDataUnableInteract.durationDown;
-                        tweenUp.duration = motionDataUnableInteract.durationUp;
-                        tweenScaleDown.minNormalizedTime = 0;
-                        tweenScaleDown.maxNormalizedTime = 1;
-                        tweenScaleUp.minNormalizedTime = 0;
-                        tweenScaleUp.maxNormalizedTime = 1;
-                        break;
-                    case EButtonMotion.Uniform:
-                        tweenDown.duration = motionDataUnableInteract.durationDown;
-                        tweenUp.duration = motionDataUnableInteract.durationDown + motionDataUnableInteract.durationUp;
-                        tweenScaleDown.minNormalizedTime = 0;
-                        float value = motionDataUnableInteract.durationDown.Remap(0, tweenUp.duration, 0f, 1f);
-                        tweenScaleDown.maxNormalizedTime = value;
-                        tweenScaleUp.minNormalizedTime = value;
-                        tweenScaleUp.maxNormalizedTime = 1;
-                        break;
-                }
-
-                if (!Application.isPlaying)
-                {
-                    tweenScaleDown.from = AffectObject != null ? AffectObject.localScale : DefaultScale;
-                    tweenScaleUp.to = AffectObject != null ? AffectObject.localScale : DefaultScale;
-                    tweenScaleDown.target = AffectObject;
-                    tweenScaleUp.target = AffectObject;
-                }
-                else
-                {
-                    tweenScaleDown.from = DefaultScale;
-                    tweenScaleUp.to = DefaultScale;
-                }
-
-                tweenScaleDown.to = _endValue;
-                tweenScaleUp.from = _endValue;
-            }
-        }
-
-        private void OnCompletePhaseDown() { }
-
-        private void OnCompletePhaseUp() { }
 
         #endregion
 

@@ -1,5 +1,4 @@
-﻿using Pancake.Tween;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -19,25 +18,7 @@ namespace Pancake.UI.Editor
 
         private static void SetupUIButton(RectTransform button)
         {
-            var tweenDown = button.GetComponent<TweenPlayer>();
-            tweenDown.timeMode = TimeMode.Normal;
-            tweenDown.arrivedAction = ArrivedAction.AlwaysStopOnArrived;
-            tweenDown.sampleOnAwake = false;
-            var scaleDown = tweenDown.AddAnimation<TweenTransformScale>();
-            scaleDown.toggle.x = true;
-            scaleDown.toggle.y = true;
             var uiButton = button.GetComponent<UIButton>();
-            uiButton.TweenDown = tweenDown;
-
-            var tweenUp = button.gameObject.AddComponent<TweenPlayer>();
-            tweenUp.timeMode = TimeMode.Normal;
-            tweenUp.arrivedAction = ArrivedAction.AlwaysStopOnArrived;
-            tweenUp.sampleOnAwake = false;
-            var scaleUp = tweenUp.AddAnimation<TweenTransformScale>();
-            scaleUp.toggle.x = true;
-            scaleUp.toggle.y = true;
-            uiButton.TweenUp = tweenUp;
-
             button.sizeDelta = new Vector2(160, 60);
             uiButton.IsMotion = true;
         }
