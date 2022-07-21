@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Cysharp.Threading.Tasks;
+using Pancake.Common;
 using Pancake.Tween;
 using UnityEngine;
 using UnityEngine.Events;
@@ -52,7 +52,7 @@ namespace Pancake.UI
         [SerializeField] private Canvas containerCanvas;
         [SerializeField] private GraphicRaycaster containerGraphicRaycaster;
         [SerializeField] private CanvasGroup containerCanvasGroup;
-        
+
         private bool _canActuallyClose;
         private Vector3 _defaultContainerScale;
         private CancellationTokenSource _tokenSourceCheckPressButton;
@@ -73,7 +73,6 @@ namespace Pancake.UI
         public GraphicRaycaster ContainerGraphicRaycaster => containerGraphicRaycaster;
         public bool Active { get; protected set; }
         public CancellationTokenSource TokenSourceCheckPressButton => _tokenSourceCheckPressButton ?? (_tokenSourceCheckPressButton = new CancellationTokenSource());
-
 
 
 #if UNITY_EDITOR
@@ -233,11 +232,12 @@ namespace Pancake.UI
 
         #endregion
 
-        // ReSharper disable PossibleNullReferenceException
+        #region motion
+        
         /// <summary>
         /// 
         /// </summary>
-        protected virtual async void MotionDisplay()
+        protected virtual void MotionDisplay()
         {
             containerGraphicRaycaster.enabled = false;
             containerTransform.gameObject.SetActive(true);
@@ -245,121 +245,62 @@ namespace Pancake.UI
             {
                 case EMotionAffect.Scale:
                     containerTransform.localScale = startScale;
-                    if (easeDisplay == EEasingType.AnimationCurve)
-                    {
-                        await containerTransform.DOScale(endValueDisplay, durationDisplay).SetEase(curveDisplay).WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-                    else
-                    {
-                        await containerTransform.DOScale(endValueDisplay, durationDisplay)
-                            .SetEase(easeDisplay.Interpolate())
-                            .WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-
+                    containerTransform.TweenLocalScale(endValueDisplay, durationDisplay)
+                        .SetEase(interpolatorDisplay)
+                        .OnComplete(() => containerGraphicRaycaster.enabled = true)
+                        .Play();
                     break;
                 case EMotionAffect.Position:
                     containerTransform.localScale = _defaultContainerScale;
                     containerTransform.localPosition = positionFromDisplay;
-                    if (easeDisplay == EEasingType.AnimationCurve)
-                    {
-                        await containerTransform.DOLocalMove(positionToDisplay, durationDisplay)
-                            .SetEase(curveDisplay)
-                            .WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-                    else
-                    {
-                        await containerTransform.DOLocalMove(positionToDisplay, durationDisplay)
-                            .SetEase(easeDisplay.Interpolate())
-                            .WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-
+                    containerTransform.TweenLocalPosition(positionFromDisplay, durationDisplay)
+                        .SetEase(interpolatorDisplay)
+                        .OnComplete(() => containerGraphicRaycaster.enabled = true)
+                        .Play();
                     break;
                 case EMotionAffect.PositionScale:
                     containerTransform.localScale = startScale;
                     containerTransform.localPosition = positionFromDisplay;
-                    if (easeDisplay == EEasingType.AnimationCurve)
-                    {
-                        await UniTask.WhenAll(
-                            containerTransform.DOLocalMove(positionToDisplay, durationDisplay)
-                                .SetEase(curveDisplay)
-                                .WithCancellation(this.GetCancellationTokenOnDestroy()),
-                            containerTransform.DOScale(endValueDisplay, durationDisplay).SetEase(curveDisplay).WithCancellation(this.GetCancellationTokenOnDestroy()));
-                    }
-                    else
-                    {
-                        await UniTask.WhenAll(
-                            containerTransform.DOLocalMove(positionToDisplay, durationDisplay)
-                                .SetEase(easeDisplay.Interpolate())
-                                .WithCancellation(this.GetCancellationTokenOnDestroy()),
-                            containerTransform.DOScale(endValueDisplay, durationDisplay)
-                                .SetEase(easeDisplay.Interpolate())
-                                .WithCancellation(this.GetCancellationTokenOnDestroy()));
-                    }
-
+                    var sequense = TweenManager.Sequence();
+                    sequense.Join(containerTransform.TweenLocalScale(endValueDisplay, durationDisplay).SetEase(interpolatorDisplay));
+                    sequense.Join(containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay).SetEase(interpolatorDisplay));
+                    sequense.OnComplete(() => containerGraphicRaycaster.enabled = true);
+                    sequense.Play();
                     break;
             }
-
-            containerGraphicRaycaster.enabled = true;
         }
 
         /// <summary>
         /// 
         /// </summary>
-        protected virtual async void MotionHide()
+        protected virtual void MotionHide()
         {
             containerGraphicRaycaster.enabled = false;
+
+            void End()
+            {
+                containerTransform.gameObject.SetActive(false);
+                _canActuallyClose = true;
+            }
+
             switch (motionAffectHide)
             {
                 case EMotionAffect.Scale:
-                    if (easeDisplay == EEasingType.AnimationCurve)
-                    {
-                        await containerTransform.DOScale(endValueHide, durationHide).SetEase(curveHide).WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-                    else
-                    {
-                        await containerTransform.DOScale(endValueHide, durationHide)
-                            .SetEase(easeHide.Interpolate())
-                            .WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-
+                    containerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
                     break;
                 case EMotionAffect.Position:
-                    if (easeDisplay == EEasingType.AnimationCurve)
-                    {
-                        await containerTransform.DOLocalMove(positionToHide, durationHide).SetEase(curveHide).WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-                    else
-                    {
-                        await containerTransform.DOLocalMove(positionToHide, durationHide)
-                            .SetEase(easeHide.Interpolate())
-                            .WithCancellation(this.GetCancellationTokenOnDestroy());
-                    }
-
+                    containerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
                     break;
                 case EMotionAffect.PositionScale:
-                    if (easeDisplay == EEasingType.AnimationCurve)
-                    {
-                        await UniTask.WhenAll(
-                            containerTransform.DOLocalMove(positionToHide, durationHide).SetEase(curveHide).WithCancellation(this.GetCancellationTokenOnDestroy()),
-                            containerTransform.DOScale(endValueHide, durationHide).SetEase(curveHide).WithCancellation(this.GetCancellationTokenOnDestroy()));
-                    }
-                    else
-                    {
-                        await UniTask.WhenAll(
-                            containerTransform.DOLocalMove(positionToHide, durationHide)
-                                .SetEase(easeHide.Interpolate())
-                                .WithCancellation(this.GetCancellationTokenOnDestroy()),
-                            containerTransform.DOScale(endValueHide, durationHide)
-                                .SetEase(easeHide.Interpolate())
-                                .WithCancellation(this.GetCancellationTokenOnDestroy()));
-                    }
-
+                    var sequense = TweenManager.Sequence();
+                    sequense.Join(containerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide));
+                    sequense.Join(containerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide));
+                    sequense.OnComplete(End);
+                    sequense.Play();
                     break;
             }
-
-            containerTransform.gameObject.SetActive(false);
-            _canActuallyClose = true;
         }
-        // ReSharper restore PossibleNullReferenceException
+
+        #endregion
     }
 }

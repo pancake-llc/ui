@@ -3,9 +3,14 @@ using UnityEngine;
 
 namespace Pancake.UI
 {
+    /// <summary>
+    /// prefab popup must be mark label is uipopup
+    /// Marking the label has the effect of loading all available prefab popups in the address location form and performing a search by type.
+    /// </summary>
     public class Popup : MonoBehaviour
     {
         public static Popup Instance { get; private set; }
+        private const string LABEL = "uipopup";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
@@ -19,13 +24,31 @@ namespace Pancake.UI
         /// stack contains all popup (LIFO)
         /// </summary>
         private readonly Stack<IPopup> _stacks = new Stack<IPopup>();
-        private Dictionary<string, IPopup> _container = new Dictionary<string, IPopup>();
+
+        private Dictionary<string, IPopup> _container = null;
+
+        private Dictionary<string, IPopup> Container
+        {
+            get
+            {
+                if (_container == null)
+                {
+                     LazyFindAllPrefabLocation();
+                }
+            }
+        }
 
         /// <summary>
         /// control sorting order of root canvas popup
         /// </summary>
         private int _sortingOrder;
 
+
+        private async void LazyFindAllPrefabLocation()
+        {
+            
+        }
+        
         /// <summary>
         /// hide popup in top stack
         /// </summary>

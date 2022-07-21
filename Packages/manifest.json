@@ -4,6 +4,7 @@
     "com.pancake.tween": "https://github.com/pancake-llc/tween.git?path=Assets/_Root#1.4.0",
     "com.pancake.common": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.2.9",
     "com.system-community.systemruntimecompilerservicesunsafe": "https://github.com/system-community/SystemRuntimeCompilerServicesUnsafe.git?path=Assets/_Root#4.5.3",
+    "com.unity.addressables": "1.19.19",
     "com.unity.ide.rider": "3.0.14",
     "com.unity.ide.visualstudio": "2.0.14",
     "com.unity.ide.vscode": "1.2.5",
