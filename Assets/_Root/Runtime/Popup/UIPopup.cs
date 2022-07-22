@@ -31,7 +31,6 @@ namespace Pancake.UI
 
         public EMotionAffect motionAffectDisplay = EMotionAffect.Scale;
         public Vector2 endValueDisplay = Vector2.one;
-        public Vector2 positionFromDisplay;
         public Vector2 positionToDisplay;
         [Range(0.01f, 3f)] public float durationDisplay = 0.25f;
         public Interpolator interpolatorDisplay;
@@ -191,9 +190,12 @@ namespace Pancake.UI
             gameObject.SetActive(false);
         }
 
-        public void Rise() { BackgroundCanvasGroup.alpha = 1; }
+        public virtual void Rise()
+        {
+            if (BackgroundCanvasGroup != null) BackgroundCanvasGroup.alpha = 1;
+        }
 
-        public void Collapse() { BackgroundCanvasGroup.alpha = 0; }
+        public virtual void Collapse() { if (BackgroundCanvasGroup != null) BackgroundCanvasGroup.alpha = 0; }
 
         #endregion
 
@@ -219,7 +221,7 @@ namespace Pancake.UI
         /// </summary>
         protected virtual void OnAfterClose()
         {
-            Popup.Instance.Close();
+            Popup.Close();
             onAfterClose?.Invoke();
             TokenSourceCheckPressButton?.Dispose();
         }
@@ -252,15 +254,15 @@ namespace Pancake.UI
                     break;
                 case EMotionAffect.Position:
                     containerTransform.localScale = _defaultContainerScale;
-                    containerTransform.localPosition = positionFromDisplay;
-                    containerTransform.TweenLocalPosition(positionFromDisplay, durationDisplay)
+                    containerTransform.localPosition = positionToHide;
+                    containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay)
                         .SetEase(interpolatorDisplay)
                         .OnComplete(() => containerGraphicRaycaster.enabled = true)
                         .Play();
                     break;
                 case EMotionAffect.PositionScale:
                     containerTransform.localScale = startScale;
-                    containerTransform.localPosition = positionFromDisplay;
+                    containerTransform.localPosition = positionToHide;
                     var sequense = TweenManager.Sequence();
                     sequense.Join(containerTransform.TweenLocalScale(endValueDisplay, durationDisplay).SetEase(interpolatorDisplay));
                     sequense.Join(containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay).SetEase(interpolatorDisplay));

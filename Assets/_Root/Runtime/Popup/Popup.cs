@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -13,16 +14,15 @@ namespace Pancake.UI
     [AddComponentMenu("")]
     public class Popup : MonoBehaviour
     {
-        public static Popup Instance { get; private set; }
+        private static Popup instance;
         public bool IsDoneFindAllPopupLightWeight { get; set; }
-        private const string LABEL = "uipopup";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            Instance = new GameObject("[Popup]").AddComponent<Popup>();
-            Instance.gameObject.hideFlags = HideFlags.HideInHierarchy;
-            DontDestroyOnLoad(Instance);
+            instance = new GameObject("[Popup]").AddComponent<Popup>();
+            instance.gameObject.hideFlags = HideFlags.HideInHierarchy;
+            DontDestroyOnLoad(instance);
         }
 
         /// <summary>
@@ -36,133 +36,143 @@ namespace Pancake.UI
         /// control sorting order of root canvas popup
         /// </summary>
         private int _sortingOrder;
-        
-        public async void LazyFindAllPrefabLocation()
+
+        public static async void LazyFindAllPrefabLocation()
         {
-            IsDoneFindAllPopupLightWeight = false;
-            _container = new Dictionary<IResourceLocation, IPopup>();
-            var allPopopupNames = await Addressables.LoadResourceLocationsAsync(LABEL);
+            instance.IsDoneFindAllPopupLightWeight = false;
+            instance._container = new Dictionary<IResourceLocation, IPopup>();
+            var allPopopupNames = await Addressables.LoadResourceLocationsAsync(PopupRootHolder.instance.label);
             foreach (var className in allPopopupNames)
             {
-                if (!_container.ContainsKey(className)) _container.Add(className, null);
+                if (!instance._container.ContainsKey(className)) instance._container.Add(className, null);
             }
 
-            IsDoneFindAllPopupLightWeight = true;
+            instance.IsDoneFindAllPopupLightWeight = true;
         }
 
         /// <summary>
-        /// hide popup in top stack
+        /// Close popup in top of stack
+        /// popup will still alive but it deactive
         /// </summary>
-        public void Close()
+        public static void Close()
         {
-            _stacks.Pop(); // remove the highest popup in stack
-            var orderOfBoard = 0;
-            if (_stacks.Count >= 1)
+            if (instance._stacks.Count == 0)
             {
-                var top = _stacks.Peek();
-                top.Rise();
-                if (_stacks.Count > 1) orderOfBoard = top.Canvas.sortingOrder - 10;
+                Debug.LogError("[Popup] stack holder popup is empty, you can not close");
+                return;
             }
 
-            _sortingOrder = orderOfBoard;
+            instance._stacks.Pop().Close(); // remove the highest popup in stack
+            var orderOfBoard = 0;
+            if (instance._stacks.Count >= 1)
+            {
+                var top = instance._stacks.Peek();
+                top.Rise();
+                if (instance._stacks.Count > 1) orderOfBoard = top.Canvas.sortingOrder - 10;
+            }
+
+            instance._sortingOrder = orderOfBoard;
         }
 
         /// <summary>
-        /// hide all popup in top stack
+        /// Close all popup in top stack
+        /// popup will still alive but it deactive
         /// </summary>
-        public void CloseAll()
+        public static void CloseAll()
         {
-            int count = _stacks.Count;
+            int count = instance._stacks.Count;
             for (var i = 0; i < count; i++)
             {
-                _stacks.Pop().Close();
+                instance._stacks.Pop().Close();
             }
 
-            _sortingOrder = 0;
+            instance._sortingOrder = 0;
         }
 
-        public async void Show<T>() where T : IPopup
+        public static async void Show<T>() where T : IPopup
         {
-            if (_container == null)
+            if (instance._container == null)
             {
                 LazyFindAllPrefabLocation();
-                await UniTask.WaitUntil(() => IsDoneFindAllPopupLightWeight);
-            }
-            var className = typeof(T).Name;
-            IResourceLocation location = null;
-            bool exist = false;
-            foreach (var key in _container.Keys)
-            {
-                if (key.PrimaryKey.Equals(className))
-                {
-                    exist = true;
-                    location = key;
-                    break;
-                }
+                await UniTask.WaitUntil(() => instance.IsDoneFindAllPopupLightWeight);
             }
 
-            if (!exist)
+            if (instance._container == null)
             {
-                Debug.LogError($"[Popup] Can not find popup in addressable with key '{className}'");
+                Debug.Log("[Popup] container null. Please check again!");
                 return;
             }
 
-            if (_container[location] == null)
+            var location = Get<T>();
+
+            if (location == null)
             {
-                var obj = await Addressables.InstantiateAsync(location);
-                _container[location] = obj.GetComponent<IPopup>();
+                Debug.LogError($"[Popup] Can not find popup in addressable with key '{typeof(T).Name}'");
+                return;
             }
 
-            Show(_container[location]);
+            if (instance._container[location] == null)
+            {
+                var obj = await Addressables.InstantiateAsync(location, parent: PopupRootHolder.instance.transform);
+                instance._container[location] = obj.GetComponent<IPopup>();
+            }
+
+            Show(instance._container[location]);
         }
 
-        public void Release<T>() where T : IPopup
+        public static void Release<T>() where T : IPopup
         {
-            if (_container == null) return;
-            var className = typeof(T).Name;
-            IResourceLocation location = null;
-            bool exist = false;
-            foreach (var key in _container.Keys)
+            if (instance._container == null) return;
+            var location = Get<T>();
+
+            if (location == null)
             {
-                if (key.PrimaryKey.Equals(className))
-                {
-                    exist = true;
-                    location = key;
-                    break;
-                }
-            }
-            
-            if (!exist)
-            {
-                Debug.LogError($"[Popup] Can not find popup in addressable with key '{className}'");
+                Debug.LogError($"[Popup] Can not find popup in addressable with key '{typeof(T).Name}'");
                 return;
             }
 
-            if (_container[location] != null)
+            if (instance._container[location] != null)
             {
-                Addressables.ReleaseInstance(_container[location].GameObject);
-                _container[location] = null;
+                Addressables.ReleaseInstance(instance._container[location].GameObject);
+                instance._container[location] = null;
             }
+        }
+
+        private static IResourceLocation Get<T>()
+        {
+            string typeName = typeof(T).Name; // reflection
+            IResourceLocation result = null;
+            foreach (var key in instance._container.Keys)
+            {
+                if (key.PrimaryKey.Equals(typeName)) result = key;
+            }
+
+            return result;
         }
 
         /// <summary>
         /// show popup
         /// </summary>
         /// <param name="popup">popup wanna show</param>
-        private void Show(IPopup popup)
+        private static void Show(IPopup popup)
         {
             var lastOrder = 0;
-            if (_stacks.Count > 0)
+            if (instance._stacks.Count > 0)
             {
-                var top = _stacks.Peek();
+                var top = instance._stacks.Peek();
+                if (top == popup)
+                {
+                    Debug.Log("[Popup] you trying show popup is already displayed!");
+                    return;
+                }
                 top.Collapse();
                 lastOrder = top.Canvas.sortingOrder;
             }
 
             popup.UpdateSortingOrder(lastOrder + 10);
-            _sortingOrder = lastOrder;
-            _stacks.Push(popup);
-            popup.Show(); // show
+            instance._sortingOrder = lastOrder;
+            instance._stacks.Push(popup);
+            popup.Show();
         }
 
         /// <summary>
@@ -170,13 +180,13 @@ namespace Pancake.UI
         /// </summary>
         /// <param name="popup">popup wanna show</param>
         /// <param name="number">number previous popup wanna hide</param>
-        private void Show(IPopup popup, int number)
+        private static void Show(IPopup popup, int number)
         {
-            if (number > _stacks.Count) number = _stacks.Count;
+            if (number > instance._stacks.Count) number = instance._stacks.Count;
 
             for (int i = 0; i < number; i++)
             {
-                var p = _stacks.Pop();
+                var p = instance._stacks.Pop();
                 p.Close();
             }
 
@@ -187,16 +197,16 @@ namespace Pancake.UI
         /// show popup and hide all previous popup
         /// </summary>
         /// <param name="popup">popup wanna show</param>
-        private void ShowAndColapseAll(IPopup popup) { Show(popup, _stacks.Count); }
+        private static void ShowAndColapseAll(IPopup popup) { Show(popup, instance._stacks.Count); }
 
         /// <summary>
         /// check has exist <paramref name="popup"/> in active stack
         /// </summary>
         /// <param name="popup"></param>
         /// <returns></returns>
-        private bool Contains(IPopup popup)
+        private static bool Contains(IPopup popup)
         {
-            foreach (var handler in _stacks)
+            foreach (var handler in instance._stacks)
             {
                 if (handler == popup) return true;
             }

@@ -1,23 +1,41 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.SceneManagement;
 
 namespace Pancake.UI
 {
     public class NewBehaviourScript : MonoBehaviour
     {
-        // Start is called before the first frame update
-        void Start()
+        private void Awake()
         {
-            Addressables.InitializeAsync();
-            //Popup.Instance.Show<PopupSetting>();
+            //DontDestroyOnLoad(gameObject);
         }
 
-        [ContextMenu("A")]
+        [ContextMenu("Show")]
+        public void ShowPopupSetting()
+        {
+            Popup.Show<PopupSetting>();
+        }
+
+        [ContextMenu("Release")]
         public void A()
         {
-            Popup.Instance.Release<PopupSetting>();
+            Popup.Release<PopupSetting>();
+        }     
+        
+        [ContextMenu("Close")]
+        public void Close()
+        {
+            Popup.Close();
+        }       
+        
+        [ContextMenu("menu")]
+        public void Menu()
+        {
+            SceneManager.LoadScene("menu");
         }
         
         
