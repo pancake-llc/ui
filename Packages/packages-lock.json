@@ -8,13 +8,13 @@
       "hash": "33d32baea4d50040e0601b725a694dcf3dcf6640"
     },
     "com.pancake.common": {
-      "version": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.2.9",
+      "version": "https://github.com/pancake-llc/common.git?path=Assets/_Root#1.3.1",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
-      "hash": "6378a3f2b98658182f498954062771466478d435"
+      "hash": "f3592cdbf120e7fe3d2eb3e4a00448a765571494"
     },
     "com.pancake.tween": {
       "version": "https://github.com/pancake-llc/tween.git?path=Assets/_Root#1.4.0",

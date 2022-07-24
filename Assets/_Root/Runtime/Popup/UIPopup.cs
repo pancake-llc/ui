@@ -32,6 +32,7 @@ namespace Pancake.UI
         public EMotionAffect motionAffectDisplay = EMotionAffect.Scale;
         public Vector2 endValueDisplay = Vector2.one;
         public Vector2 positionToDisplay;
+        public Vector2 positionFromDisplay;
         [Range(0.01f, 3f)] public float durationDisplay = 0.25f;
         public Interpolator interpolatorDisplay;
 
@@ -77,6 +78,7 @@ namespace Pancake.UI
 #if UNITY_EDITOR
         /// <summary>
         /// do not use this
+        /// it only avaiable on editor
         /// </summary>
         [Obsolete] public List<Button> CloseButtons => closeButtons;
 #endif
@@ -254,15 +256,15 @@ namespace Pancake.UI
                     break;
                 case EMotionAffect.Position:
                     containerTransform.localScale = _defaultContainerScale;
-                    containerTransform.localPosition = positionToHide;
+                    containerTransform.localPosition = positionFromDisplay;
                     containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay)
                         .SetEase(interpolatorDisplay)
                         .OnComplete(() => containerGraphicRaycaster.enabled = true)
                         .Play();
                     break;
-                case EMotionAffect.PositionScale:
+                case EMotionAffect.PositionAndScale:
                     containerTransform.localScale = startScale;
-                    containerTransform.localPosition = positionToHide;
+                    containerTransform.localPosition = positionFromDisplay;
                     var sequense = TweenManager.Sequence();
                     sequense.Join(containerTransform.TweenLocalScale(endValueDisplay, durationDisplay).SetEase(interpolatorDisplay));
                     sequense.Join(containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay).SetEase(interpolatorDisplay));
@@ -293,7 +295,7 @@ namespace Pancake.UI
                 case EMotionAffect.Position:
                     containerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
                     break;
-                case EMotionAffect.PositionScale:
+                case EMotionAffect.PositionAndScale:
                     var sequense = TweenManager.Sequence();
                     sequense.Join(containerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide));
                     sequense.Join(containerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide));

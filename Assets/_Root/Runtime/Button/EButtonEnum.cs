@@ -59,6 +59,6 @@ namespace Pancake.UI
     {
         Scale = 0,
         Position = 1,
-        PositionScale = 2,
+        PositionAndScale = 2,
     }
 }
