@@ -1,5 +1,6 @@
 using Pancake.Editor;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -37,6 +38,7 @@ namespace Pancake.UI.Editor
         private SerializedProperty _endValueDisplay;
         private SerializedProperty _durationHide;
         private SerializedProperty _durationDisplay;
+        private ReorderableList _closeButtonList;
 
         protected UIPopup popup;
 
@@ -69,6 +71,25 @@ namespace Pancake.UI.Editor
             _backgroundCanvas = serializedObject.FindProperty("backgroundCanvas");
             _backgroundGraphicRaycaster = serializedObject.FindProperty("backgroundGraphicRaycaster");
             _backgroundCanvasGroup = serializedObject.FindProperty("backgroundCanvasGroup");
+            _closeButtonList = new ReorderableList(serializedObject,
+                _closeButtons,
+                true,
+                true,
+                true,
+                true);
+            _closeButtonList.drawElementCallback = DrawListButtonItem;
+            _closeButtonList.drawHeaderCallback = DrawHeader;
+        }
+
+        private void DrawHeader(Rect rect)
+        {
+            EditorGUI.LabelField(rect, "Close Button");
+        }
+
+        private void DrawListButtonItem(Rect rect, int index, bool isactive, bool isfocused)
+        {
+            SerializedProperty element = _closeButtonList.serializedProperty.GetArrayElementAtIndex(index); //The element in the list
+            EditorGUI.PropertyField(rect, element, new GUIContent(element.displayName), element.isExpanded);
         }
 
         public override void OnInspectorGUI()
@@ -141,8 +162,11 @@ namespace Pancake.UI.Editor
                     }
                 }
 #pragma warning restore 612
+
+                _closeButtonList.DoLayoutList();
             }
 
+            Uniform.SpaceOneLine();
             Uniform.DrawUppercaseSection("UIPOPUP_SETTING_DISPLAY", "DISPLAY", DrawDisplaySetting);
 
             void DrawDisplaySetting()
@@ -203,6 +227,7 @@ namespace Pancake.UI.Editor
                 _durationDisplay.floatValue = EditorGUILayout.FloatField("Duration", _durationDisplay.floatValue);
             }
 
+            Uniform.SpaceOneLine();
             Uniform.DrawUppercaseSection("UIPOPUP_SETTING_HIDE", "HIDE", DrawHideSetting);
 
             void DrawHideSetting()
@@ -252,8 +277,9 @@ namespace Pancake.UI.Editor
 
                 _durationHide.floatValue = EditorGUILayout.FloatField("Duration", _durationHide.floatValue);
             }
-            
+
             GUI.color = Color.white;
+            Uniform.SpaceOneLine();
             Uniform.DrawUppercaseSection("UIPOPUP_SETTING_REF_ROOT", "ROOT", DrawReferenceRootSetting);
 
             void DrawReferenceRootSetting()
@@ -279,6 +305,7 @@ namespace Pancake.UI.Editor
             }
 
             GUI.color = Color.white;
+            Uniform.SpaceOneLine();
             Uniform.DrawUppercaseSection("UIPOPUP_SETTING_REF_BG", "BACKGROUND", DrawReferenceBackgroundSetting);
 
             void DrawReferenceBackgroundSetting()
@@ -351,6 +378,7 @@ namespace Pancake.UI.Editor
             }
 
             GUI.color = Color.white;
+            Uniform.SpaceOneLine();
             Uniform.DrawUppercaseSection("UIPOPUP_SETTING_REF_CONTAINER", "CONTAINER", DrawReferenceContainerSetting);
 
             void DrawReferenceContainerSetting()
@@ -435,9 +463,7 @@ namespace Pancake.UI.Editor
                 EditorGUILayout.ObjectField(_containerCanvasGroup, new GUIContent(""));
                 EditorGUILayout.EndHorizontal();
             }
-            
-            
-            
+
             EditorGUILayout.Space();
             Repaint();
             serializedObject.ApplyModifiedProperties();
@@ -449,7 +475,7 @@ namespace Pancake.UI.Editor
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static Button AddBlankButtonComponent(GameObject target)
+        private static Button AddBlankButtonComponent(GameObject target)
         {
             var button = target.AddComponent<Button>();
             button.transition = Selectable.Transition.None;

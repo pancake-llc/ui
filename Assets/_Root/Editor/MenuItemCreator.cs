@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using Pancake.Common;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -32,6 +33,71 @@ namespace Pancake.UI.Editor
             Selection.activeTransform = button;
         }
 
+        [MenuItem("GameObject/Pancake/UIPopup", false, 1100)]
+        public static void CreateUIPopupEmpty()
+        {
+            var popup = CreateUIPopupObject();
+            Undo.RegisterCreatedObjectUndo(popup.gameObject, "Create UniPopup");
+            Selection.activeTransform = popup;
+        }
+        
+        private static RectTransform CreateUIPopupObject()
+        {
+            // find canvas in scene
+            var allCanvases = (Canvas[]) Object.FindObjectsOfType(typeof(Canvas));
+            if (allCanvases.Length > 0)
+            {
+                if (Selection.activeTransform == null) return CreateUniPopup(allCanvases[0].transform);
+
+                for (int i = 0; i < allCanvases.Length; i++)
+                {
+                    if (!Selection.activeTransform.IsChildOf(allCanvases[i].transform)) continue;
+                    return CreateUniPopup(Selection.activeTransform);
+                }
+
+                return CreateUniPopup(allCanvases[0].transform);
+            }
+
+            var canvas = CreateCanvas();
+            return CreateUniPopup(canvas.transform);
+        }
+        
+        private static RectTransform CreateUniPopup(Transform parent)
+        {
+#if UNITY_2020_2_OR_NEWER
+            static RectTransform Create(Transform parentLocalVar, string name, bool overSorting = true)
+#else
+            RectTransform Create(Transform parentLocalVar, string name, bool overSorting = true)
+#endif
+            {
+                var r = CreateEmptyRectTransformObject(parentLocalVar, name);
+                r.gameObject.AddComponent<Canvas>().overrideSorting = overSorting;
+                r.gameObject.AddComponent<GraphicRaycaster>();
+                return r;
+            }
+
+            var popup = Create(parent, "Popup");
+            popup.FullScreen();
+
+            var background = Create(popup.transform, "Background", false);
+            background.FullScreen();
+            background.gameObject.AddComponent<CanvasGroup>();
+            var img = background.gameObject.AddComponent<Image>();
+            img.color = new Color(0f, 0f, 0f, 0.78f);
+
+            var container = Create(popup.transform, "Container", false);
+            container.gameObject.AddComponent<CanvasGroup>();
+            container.gameObject.AddComponent<Image>().GetComponent<RectTransform>().sizeDelta = new Vector2(800, 500);
+
+            var button = CreateObjectWithComponent<UIButton>(container.transform, "BtnClose");
+            button.gameObject.layer = LayerMask.NameToLayer("UI");
+            button.sizeDelta = new Vector2(80, 80);
+            button.anchorMax = Vector2.one;
+            button.anchorMin = Vector2.one;
+            button.anchoredPosition = Vector2.zero;
+            return popup;
+        }
+        
         private static RectTransform CreateEmptyRectTransformObject(Transform parent, string name)
         {
             var obj = new GameObject(name);
