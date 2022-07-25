@@ -41,7 +41,7 @@ namespace Pancake.UI
         {
             instance.IsDoneFindAllPopupLightWeight = false;
             instance._container = new Dictionary<IResourceLocation, IPopup>();
-            var allPopopupNames = await Addressables.LoadResourceLocationsAsync(PopupRootHolder.instance.label);
+            var allPopopupNames = await Addressables.LoadResourceLocationsAsync(PopupHelper.POPUP_LABEL);
             foreach (var className in allPopopupNames)
             {
                 if (!instance._container.ContainsKey(className)) instance._container.Add(className, null);

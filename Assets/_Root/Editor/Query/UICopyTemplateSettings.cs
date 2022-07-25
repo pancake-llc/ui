@@ -3,8 +3,8 @@ using UnityEngine.UI;
 
 namespace Pancake.UIQuery.Editor
 {
-    [CreateAssetMenu(menuName = "AnKuchen/CopyTemplateSettings", fileName = "AnKuchenCopyTemplateSettings")]
-    public class AnKuchenCopyTemplateSettings : ScriptableObject
+    [CreateAssetMenu(menuName = "Pancake/UICopyTemplateSettings", fileName = "UICopyTemplateSettings")]
+    public class UICopyTemplateSettings : ScriptableObject
     {
         public string ClassName => className;
         [SerializeField] private string className = DefaultClassName;

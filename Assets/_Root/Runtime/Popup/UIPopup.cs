@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Pancake.Common;
 using Pancake.Tween;
+using Pancake.UIQuery;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -14,6 +15,7 @@ namespace Pancake.UI
     [RequireComponent(typeof(RectTransform))]
     [RequireComponent(typeof(Canvas))]
     [RequireComponent(typeof(GraphicRaycaster))]
+    [RequireComponent(typeof(UICache))]
     public abstract class UIPopup : MonoBehaviour, IPopup
     {
         #region implementation
@@ -53,24 +55,117 @@ namespace Pancake.UI
         [SerializeField] private GraphicRaycaster containerGraphicRaycaster;
         [SerializeField] private CanvasGroup containerCanvasGroup;
 
+        private UICache _uiCache;
         private bool _canActuallyClose;
         private Vector3 _defaultContainerScale;
         private CancellationTokenSource _tokenSourceCheckPressButton;
+
+        public UICache UIRoot
+        {
+            get
+            {
+                if (_uiCache == null) _uiCache = GetComponent<UICache>();
+                return _uiCache;
+            }
+        }
+
         public GameObject GameObject => gameObject;
         public bool BackButtonPressed { get; private set; }
-        public Canvas Canvas => canvas;
+
+        public Canvas Canvas
+        {
+            get
+            {
+                if (canvas == null) canvas = GetComponent<Canvas>();
+                return canvas;
+            }
+        }
+
         public bool CloseByBackButton => closeByBackButton;
         public bool CloseByClickBackground => closeByClickBackground;
         public bool CloseByClickContainer => closeByClickContainer;
-        public GraphicRaycaster GraphicRaycaster => graphicRaycaster;
-        public RectTransform BackgroundTransform => backgroundTransform;
-        public Canvas BackgroundCanvas => backgroundCanvas;
-        public GraphicRaycaster BackgroundGraphicRaycaster => backgroundGraphicRaycaster;
-        public CanvasGroup BackgroundCanvasGroup => backgroundCanvasGroup;
-        public Canvas ContainerCanvas => containerCanvas;
-        public RectTransform ContainerTransform => containerTransform;
-        public CanvasGroup ContainerCanvasGroup => containerCanvasGroup;
-        public GraphicRaycaster ContainerGraphicRaycaster => containerGraphicRaycaster;
+
+        public GraphicRaycaster GraphicRaycaster
+        {
+            get
+            {
+                if (graphicRaycaster == null) graphicRaycaster = GetComponent<GraphicRaycaster>();
+                return graphicRaycaster;
+            }
+        }
+
+        public RectTransform BackgroundTransform
+        {
+            get
+            {
+                if (backgroundTransform == null) backgroundTransform = UIRoot.Get<RectTransform>("Background");
+                return backgroundTransform;
+            }
+        }
+
+        public Canvas BackgroundCanvas
+        {
+            get
+            {
+                if (backgroundCanvas == null) backgroundCanvas = UIRoot.Get<Canvas>("Background");
+                return backgroundCanvas;
+            }
+        }
+
+        public GraphicRaycaster BackgroundGraphicRaycaster
+        {
+            get
+            {
+                if (backgroundGraphicRaycaster == null) backgroundGraphicRaycaster = UIRoot.Get<GraphicRaycaster>("Background");
+                return backgroundGraphicRaycaster;
+            }
+        }
+
+        public CanvasGroup BackgroundCanvasGroup
+        {
+            get
+            {
+                if (backgroundCanvasGroup == null) backgroundCanvasGroup = UIRoot.Get<CanvasGroup>("Background");
+                return backgroundCanvasGroup;
+            }
+        }
+
+        public Canvas ContainerCanvas
+        {
+            get
+            {
+                if (containerCanvas == null) containerCanvas = UIRoot.Get<Canvas>("Container");
+                return containerCanvas;
+            }
+        }
+
+        public RectTransform ContainerTransform
+        {
+            get
+            {
+                if (containerTransform == null) containerTransform = UIRoot.Get<RectTransform>("Container");
+                return containerTransform;
+            }
+        }
+
+        public CanvasGroup ContainerCanvasGroup
+        {
+            get
+            {
+                if (containerCanvasGroup == null) containerCanvasGroup = UIRoot.Get<CanvasGroup>("Container");
+                return containerCanvasGroup;
+            }
+        }
+
+        public GraphicRaycaster ContainerGraphicRaycaster
+        {
+            get
+            {
+                if (containerGraphicRaycaster == null) containerGraphicRaycaster = UIRoot.Get<GraphicRaycaster>("Container");
+                return containerGraphicRaycaster;
+            }
+        }
+
         public bool Active { get; protected set; }
         public CancellationTokenSource TokenSourceCheckPressButton => _tokenSourceCheckPressButton ?? (_tokenSourceCheckPressButton = new CancellationTokenSource());
 
@@ -83,7 +178,7 @@ namespace Pancake.UI
         [Obsolete] public List<Button> CloseButtons => closeButtons;
 #endif
 
-        private void Awake() { _defaultContainerScale = containerTransform.localScale; }
+        private void Awake() { _defaultContainerScale = ContainerTransform.localScale; }
 
         private void Update()
         {
@@ -165,7 +260,7 @@ namespace Pancake.UI
         /// 
         /// </summary>
         /// <param name="sortingOrder"></param>
-        public virtual void UpdateSortingOrder(int sortingOrder) { canvas.sortingOrder = sortingOrder; }
+        public virtual void UpdateSortingOrder(int sortingOrder) { Canvas.sortingOrder = sortingOrder; }
 
         /// <summary>
         /// 
@@ -197,7 +292,10 @@ namespace Pancake.UI
             if (BackgroundCanvasGroup != null) BackgroundCanvasGroup.alpha = 1;
         }
 
-        public virtual void Collapse() { if (BackgroundCanvasGroup != null) BackgroundCanvasGroup.alpha = 0; }
+        public virtual void Collapse()
+        {
+            if (BackgroundCanvasGroup != null) BackgroundCanvasGroup.alpha = 0;
+        }
 
         #endregion
 
@@ -237,38 +335,38 @@ namespace Pancake.UI
         #endregion
 
         #region motion
-        
+
         /// <summary>
         /// 
         /// </summary>
         protected virtual void MotionDisplay()
         {
-            containerGraphicRaycaster.enabled = false;
-            containerTransform.gameObject.SetActive(true);
+            ContainerGraphicRaycaster.enabled = false;
+            ContainerTransform.gameObject.SetActive(true);
             switch (motionAffectDisplay)
             {
                 case EMotionAffect.Scale:
-                    containerTransform.localScale = startScale;
-                    containerTransform.TweenLocalScale(endValueDisplay, durationDisplay)
+                    ContainerTransform.localScale = startScale;
+                    ContainerTransform.TweenLocalScale(endValueDisplay, durationDisplay)
                         .SetEase(interpolatorDisplay)
-                        .OnComplete(() => containerGraphicRaycaster.enabled = true)
+                        .OnComplete(() => ContainerGraphicRaycaster.enabled = true)
                         .Play();
                     break;
                 case EMotionAffect.Position:
-                    containerTransform.localScale = _defaultContainerScale;
-                    containerTransform.localPosition = positionFromDisplay;
-                    containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay)
+                    ContainerTransform.localScale = _defaultContainerScale;
+                    ContainerTransform.localPosition = positionFromDisplay;
+                    ContainerTransform.TweenLocalPosition(positionToDisplay, durationDisplay)
                         .SetEase(interpolatorDisplay)
-                        .OnComplete(() => containerGraphicRaycaster.enabled = true)
+                        .OnComplete(() => ContainerGraphicRaycaster.enabled = true)
                         .Play();
                     break;
                 case EMotionAffect.PositionAndScale:
-                    containerTransform.localScale = startScale;
-                    containerTransform.localPosition = positionFromDisplay;
+                    ContainerTransform.localScale = startScale;
+                    ContainerTransform.localPosition = positionFromDisplay;
                     var sequense = TweenManager.Sequence();
-                    sequense.Join(containerTransform.TweenLocalScale(endValueDisplay, durationDisplay).SetEase(interpolatorDisplay));
-                    sequense.Join(containerTransform.TweenLocalPosition(positionToDisplay, durationDisplay).SetEase(interpolatorDisplay));
-                    sequense.OnComplete(() => containerGraphicRaycaster.enabled = true);
+                    sequense.Join(ContainerTransform.TweenLocalScale(endValueDisplay, durationDisplay).SetEase(interpolatorDisplay));
+                    sequense.Join(ContainerTransform.TweenLocalPosition(positionToDisplay, durationDisplay).SetEase(interpolatorDisplay));
+                    sequense.OnComplete(() => ContainerGraphicRaycaster.enabled = true);
                     sequense.Play();
                     break;
             }
@@ -279,26 +377,26 @@ namespace Pancake.UI
         /// </summary>
         protected virtual void MotionHide()
         {
-            containerGraphicRaycaster.enabled = false;
+            ContainerGraphicRaycaster.enabled = false;
 
             void End()
             {
-                containerTransform.gameObject.SetActive(false);
+                ContainerTransform.gameObject.SetActive(false);
                 _canActuallyClose = true;
             }
 
             switch (motionAffectHide)
             {
                 case EMotionAffect.Scale:
-                    containerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
+                    ContainerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
                     break;
                 case EMotionAffect.Position:
-                    containerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
+                    ContainerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide).OnComplete(End).Play();
                     break;
                 case EMotionAffect.PositionAndScale:
                     var sequense = TweenManager.Sequence();
-                    sequense.Join(containerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide));
-                    sequense.Join(containerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide));
+                    sequense.Join(ContainerTransform.TweenLocalScale(endValueHide, durationHide).SetEase(interpolatorHide));
+                    sequense.Join(ContainerTransform.TweenLocalPosition(positionToHide, durationHide).SetEase(interpolatorHide));
                     sequense.OnComplete(End);
                     sequense.Play();
                     break;

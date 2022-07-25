@@ -1,5 +1,9 @@
+using System;
 using Pancake.Editor;
+using Pancake.UIQuery;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,16 +16,6 @@ namespace Pancake.UI.Editor
     {
         protected const int DEFAULT_LABEL_WIDTH = 110;
         protected static readonly string[] PopupMotionType = {"Scale", "Position", "PositionAndScale"};
-        private SerializedProperty _canvas;
-        private SerializedProperty _graphicRaycaster;
-        private SerializedProperty _backgroundTransform;
-        private SerializedProperty _backgroundCanvas;
-        private SerializedProperty _backgroundGraphicRaycaster;
-        private SerializedProperty _backgroundCanvasGroup;
-        private SerializedProperty _containerTransform;
-        private SerializedProperty _containerCanvas;
-        private SerializedProperty _containerGraphicRaycaster;
-        private SerializedProperty _containerCanvasGroup;
         private SerializedProperty _closeButtons;
         private SerializedProperty _closeByBackButton;
         private SerializedProperty _closeByClickBackground;
@@ -40,11 +34,13 @@ namespace Pancake.UI.Editor
         private SerializedProperty _durationDisplay;
         private ReorderableList _closeButtonList;
 
-        protected UIPopup popup;
+        public UIPopup popup;
+        public UICache uiCache;
 
         protected virtual void OnEnable()
         {
             popup = target as UIPopup;
+            if (uiCache == null && popup != null) uiCache = popup.GetComponent<UICache>();
             _closeByBackButton = serializedObject.FindProperty("closeByBackButton");
             _closeByClickBackground = serializedObject.FindProperty("closeByClickBackground");
             _closeByClickContainer = serializedObject.FindProperty("closeByClickContainer");
@@ -55,22 +51,12 @@ namespace Pancake.UI.Editor
             _positionToHide = serializedObject.FindProperty("positionToHide");
             _positionToDisplay = serializedObject.FindProperty("positionToDisplay");
             _positionFromDisplay = serializedObject.FindProperty("positionFromDisplay");
-            _containerTransform = serializedObject.FindProperty("containerTransform");
-            _containerCanvas = serializedObject.FindProperty("containerCanvas");
-            _containerGraphicRaycaster = serializedObject.FindProperty("containerGraphicRaycaster");
-            _containerCanvasGroup = serializedObject.FindProperty("containerCanvasGroup");
             _interpolatorDisplay = serializedObject.FindProperty("interpolatorDisplay");
             _interpolatorHide = serializedObject.FindProperty("interpolatorHide");
             _endValueHide = serializedObject.FindProperty("endValueHide");
             _endValueDisplay = serializedObject.FindProperty("endValueDisplay");
             _durationHide = serializedObject.FindProperty("durationHide");
             _durationDisplay = serializedObject.FindProperty("durationDisplay");
-            _canvas = serializedObject.FindProperty("canvas");
-            _graphicRaycaster = serializedObject.FindProperty("graphicRaycaster");
-            _backgroundTransform = serializedObject.FindProperty("backgroundTransform");
-            _backgroundCanvas = serializedObject.FindProperty("backgroundCanvas");
-            _backgroundGraphicRaycaster = serializedObject.FindProperty("backgroundGraphicRaycaster");
-            _backgroundCanvasGroup = serializedObject.FindProperty("backgroundCanvasGroup");
             _closeButtonList = new ReorderableList(serializedObject,
                 _closeButtons,
                 true,
@@ -81,10 +67,7 @@ namespace Pancake.UI.Editor
             _closeButtonList.drawHeaderCallback = DrawHeader;
         }
 
-        private void DrawHeader(Rect rect)
-        {
-            EditorGUI.LabelField(rect, "Close Button");
-        }
+        private void DrawHeader(Rect rect) { EditorGUI.LabelField(rect, "Close Button"); }
 
         private void DrawListButtonItem(Rect rect, int index, bool isactive, bool isfocused)
         {
@@ -98,7 +81,34 @@ namespace Pancake.UI.Editor
             serializedObject.Update();
             EditorGUIUtility.labelWidth = 110;
 
-            Uniform.DrawUppercaseSection("UIPOPUP_CLOSE", "CLOSE BY", DrawCloseSetting);
+            bool updateCacheUI = false;
+            try
+            {
+                var backgroundTransform = uiCache.Get<RectTransform>("Background");
+            }
+            catch (Exception)
+            {
+                updateCacheUI = true;
+            }
+
+            if (updateCacheUI)
+            {
+                Uniform.HelpBox("Please update UICache first to use!", MessageType.Warning);
+            }
+            else
+            {
+                if (PrefabUtility.IsPartOfAnyPrefab(popup.gameObject) && !IsAddressable())
+                {
+                    Uniform.HelpBox("Click the toogle below to mark the popup as can be loaded by addressable", MessageType.Warning);
+                    if (GUILayout.Button("Mark Popup")) MarkPopup();
+                }
+
+                Uniform.DrawUppercaseSection("UIPOPUP_CLOSE", "CLOSE BY", DrawCloseSetting);
+                Uniform.SpaceOneLine();
+                Uniform.DrawUppercaseSection("UIPOPUP_SETTING_DISPLAY", "DISPLAY", DrawDisplaySetting);
+                Uniform.SpaceOneLine();
+                Uniform.DrawUppercaseSection("UIPOPUP_SETTING_HIDE", "HIDE", DrawHideSetting);
+            }
 
             void DrawCloseSetting()
             {
@@ -118,46 +128,40 @@ namespace Pancake.UI.Editor
                 EditorGUILayout.EndHorizontal();
 
 #pragma warning disable 612
-                if (_backgroundTransform != null && _backgroundTransform.objectReferenceValue != null)
+                var backgroundTransform = uiCache.Get<RectTransform>("Background");
+                if (backgroundTransform != null)
                 {
-                    var bg = _backgroundTransform.objectReferenceValue as RectTransform;
-                    if (bg != null)
+                    backgroundTransform.TryGetComponent<Button>(out var btn);
+                    if (popup.CloseByClickBackground)
                     {
-                        bg.TryGetComponent<Button>(out var btn);
-                        if (popup.CloseByClickBackground)
+                        if (btn == null) btn = AddBlankButtonComponent(backgroundTransform.gameObject);
+                        if (!popup.CloseButtons.Contains(btn)) popup.CloseButtons.Add(btn);
+                    }
+                    else
+                    {
+                        if (btn != null)
                         {
-                            if (btn == null) btn = AddBlankButtonComponent(bg.gameObject);
-                            if (!popup.CloseButtons.Contains(btn)) popup.CloseButtons.Add(btn);
-                        }
-                        else
-                        {
-                            if (btn != null)
-                            {
-                                DestroyImmediate(btn);
-                                _closeButtons?.RemoveEmptyArrayElements();
-                            }
+                            DestroyImmediate(btn);
+                            _closeButtons?.RemoveEmptyArrayElements();
                         }
                     }
                 }
 
-                if (_containerTransform != null && _containerTransform.objectReferenceValue != null)
+                var containerTransform = uiCache.Get<RectTransform>("Container");
+                if (containerTransform != null)
                 {
-                    var container = _containerTransform.objectReferenceValue as RectTransform;
-                    if (container != null)
+                    containerTransform.TryGetComponent<Button>(out var btn);
+                    if (popup.CloseByClickContainer)
                     {
-                        container.TryGetComponent<Button>(out var btn);
-                        if (popup.CloseByClickContainer)
+                        if (btn == null) btn = AddBlankButtonComponent(containerTransform.gameObject);
+                        if (!popup.CloseButtons.Contains(btn)) popup.CloseButtons.Add(btn);
+                    }
+                    else
+                    {
+                        if (btn != null)
                         {
-                            if (btn == null) btn = AddBlankButtonComponent(container.gameObject);
-                            if (!popup.CloseButtons.Contains(btn)) popup.CloseButtons.Add(btn);
-                        }
-                        else
-                        {
-                            if (btn != null)
-                            {
-                                DestroyImmediate(btn);
-                                _closeButtons?.RemoveEmptyArrayElements();
-                            }
+                            DestroyImmediate(btn);
+                            _closeButtons?.RemoveEmptyArrayElements();
                         }
                     }
                 }
@@ -166,11 +170,9 @@ namespace Pancake.UI.Editor
                 _closeButtonList.DoLayoutList();
             }
 
-            Uniform.SpaceOneLine();
-            Uniform.DrawUppercaseSection("UIPOPUP_SETTING_DISPLAY", "DISPLAY", DrawDisplaySetting);
-
             void DrawDisplaySetting()
             {
+                var containerTransform = uiCache.Get<RectTransform>("Container");
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label("Type", GUILayout.Width(DEFAULT_LABEL_WIDTH));
                 _motionAffectDisplay.enumValueIndex = EditorGUILayout.Popup(_motionAffectDisplay.enumValueIndex, PopupMotionType);
@@ -181,21 +183,21 @@ namespace Pancake.UI.Editor
                     GUILayout.Label("", GUILayout.Width(DEFAULT_LABEL_WIDTH));
                     if (GUILayout.Button("Save From", GUILayout.Width(90)))
                     {
-                        _positionFromDisplay.vector2Value = ((Transform) _containerTransform.objectReferenceValue).localPosition;
-                        ((Transform) _containerTransform.objectReferenceValue).localPosition = Vector3.zero;
+                        _positionFromDisplay.vector2Value = containerTransform.localPosition;
+                        containerTransform.localPosition = Vector3.zero;
                     }
 
                     if (GUILayout.Button("Save To", GUILayout.Width(90)))
                     {
-                        _positionToDisplay.vector2Value = ((Transform) _containerTransform.objectReferenceValue).localPosition;
-                        ((Transform) _containerTransform.objectReferenceValue).localPosition = Vector3.zero;
+                        _positionToDisplay.vector2Value = containerTransform.localPosition;
+                        containerTransform.localPosition = Vector3.zero;
                     }
 
                     if (GUILayout.Button("Clear", GUILayout.Width(90)))
                     {
                         _positionFromDisplay.vector2Value = Vector2.zero;
                         _positionToDisplay.vector2Value = Vector2.zero;
-                        ((Transform) _containerTransform.objectReferenceValue).localPosition = Vector3.zero;
+                        containerTransform.localPosition = Vector3.zero;
                     }
 
                     EditorGUILayout.EndHorizontal();
@@ -227,11 +229,9 @@ namespace Pancake.UI.Editor
                 _durationDisplay.floatValue = EditorGUILayout.FloatField("Duration", _durationDisplay.floatValue);
             }
 
-            Uniform.SpaceOneLine();
-            Uniform.DrawUppercaseSection("UIPOPUP_SETTING_HIDE", "HIDE", DrawHideSetting);
-
             void DrawHideSetting()
             {
+                var containerTransform = uiCache.Get<RectTransform>("Container");
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label("Type", GUILayout.Width(DEFAULT_LABEL_WIDTH));
                 _motionAffectHide.enumValueIndex = EditorGUILayout.Popup(_motionAffectHide.enumValueIndex, PopupMotionType);
@@ -244,8 +244,8 @@ namespace Pancake.UI.Editor
 
                     if (GUILayout.Button("Save To", GUILayout.Width(90)))
                     {
-                        _positionToHide.vector2Value = ((Transform) _containerTransform.objectReferenceValue).localPosition;
-                        ((Transform) _containerTransform.objectReferenceValue).localPosition = Vector3.zero;
+                        _positionToHide.vector2Value = containerTransform.localPosition;
+                        containerTransform.localPosition = Vector3.zero;
                     }
 
                     if (GUILayout.Button("Clear", GUILayout.Width(90)))
@@ -278,190 +278,51 @@ namespace Pancake.UI.Editor
                 _durationHide.floatValue = EditorGUILayout.FloatField("Duration", _durationHide.floatValue);
             }
 
-            GUI.color = Color.white;
-            Uniform.SpaceOneLine();
-            Uniform.DrawUppercaseSection("UIPOPUP_SETTING_REF_ROOT", "ROOT", DrawReferenceRootSetting);
-
-            void DrawReferenceRootSetting()
+            void MarkPopup()
             {
-                if (_canvas != null && (_canvas.objectReferenceValue == null || _canvas.objectReferenceValue != popup.GetComponent<Canvas>()))
-                    _canvas.objectReferenceValue = popup.GetComponent<Canvas>();
-
-                if (_canvas != null) GUI.color = _canvas.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Canvas", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_canvas, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-
-                if (_graphicRaycaster != null && (_graphicRaycaster.objectReferenceValue == null ||
-                                                  _graphicRaycaster.objectReferenceValue != popup.GetComponent<GraphicRaycaster>()))
-                    _graphicRaycaster.objectReferenceValue = popup.GetComponent<GraphicRaycaster>();
-
-                if (_graphicRaycaster != null) GUI.color = _graphicRaycaster.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Graphic Raycaster", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_graphicRaycaster, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+                if (!settings.GetLabels().Contains(PopupHelper.POPUP_LABEL)) settings.AddLabel(PopupHelper.POPUP_LABEL);
+                AddressableAssetGroup group = settings.FindGroup("Default Local Group");
+                var path = AssetDatabase.GetAssetPath(popup.gameObject);
+                var guid = AssetDatabase.AssetPathToGUID(path);
+                if (string.IsNullOrEmpty(guid))
+                {
+                    Debug.Log("NULL");
+                    return;
+                }
+                var entry = settings.CreateOrMoveEntry(guid, group);
+                
+                if (!entry.labels.Contains(PopupHelper.POPUP_LABEL))  entry.labels.Add(PopupHelper.POPUP_LABEL);
+                entry.address = popup.gameObject.name;
+                settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryMoved, entry, true);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
             }
 
-            GUI.color = Color.white;
-            Uniform.SpaceOneLine();
-            Uniform.DrawUppercaseSection("UIPOPUP_SETTING_REF_BG", "BACKGROUND", DrawReferenceBackgroundSetting);
-
-            void DrawReferenceBackgroundSetting()
+            bool IsAddressable()
             {
-                if (_backgroundTransform != null)
+                bool flag = false;
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+                if (settings.GetLabels().Contains(PopupHelper.POPUP_LABEL)) settings.AddLabel(PopupHelper.POPUP_LABEL);
+                AddressableAssetGroup group = settings.FindGroup("Default Local Group");
+                var obj = PrefabUtility.GetCorrespondingObjectFromOriginalSource(popup.gameObject);
+                var path = AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromOriginalSource(popup.gameObject));
+                var guid = AssetDatabase.AssetPathToGUID(path);
+
+                AddressableAssetEntry entry = null;
+                foreach (var addressableAssetEntry in group.entries)
                 {
-                    var bg = popup.transform.Find("Background");
-                    if (_backgroundTransform.objectReferenceValue == null) _backgroundTransform.objectReferenceValue = bg != null ? bg : null;
-                    else if (bg != null && _backgroundTransform.objectReferenceValue != bg) _backgroundTransform.objectReferenceValue = bg;
-                    GUI.color = _backgroundTransform.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
+                    if (addressableAssetEntry.guid == guid)
+                    {
+                        flag = true;
+                        entry = addressableAssetEntry;
+                        break;
+                    }
                 }
 
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Transform", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_backgroundTransform, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
+                if (flag)  flag = entry.labels.Contains(PopupHelper.POPUP_LABEL);
 
-                if (_backgroundCanvas != null)
-                {
-                    var bg = popup.transform.Find("Background")?.GetComponent<Canvas>();
-                    if (_backgroundCanvas.objectReferenceValue == null) _backgroundCanvas.objectReferenceValue = bg != null ? bg : null;
-                    else if (bg != null && _backgroundCanvas.objectReferenceValue != bg) _backgroundCanvas.objectReferenceValue = bg;
-                    GUI.color = _backgroundCanvas.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Canvas", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_backgroundCanvas, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-
-                if (_backgroundGraphicRaycaster != null)
-                {
-                    var bg = popup.transform.Find("Background")?.GetComponent<GraphicRaycaster>();
-                    if (_backgroundGraphicRaycaster.objectReferenceValue == null)
-                    {
-                        _backgroundGraphicRaycaster.objectReferenceValue = bg != null ? bg : null;
-                    }
-                    else if (bg != null && _backgroundGraphicRaycaster.objectReferenceValue != bg)
-                    {
-                        _backgroundGraphicRaycaster.objectReferenceValue = bg;
-                    }
-
-                    GUI.color = _backgroundGraphicRaycaster.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Graphic Raycaster", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_backgroundGraphicRaycaster, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-
-                if (_backgroundCanvasGroup != null)
-                {
-                    var bg = popup.transform.Find("Background")?.GetComponent<CanvasGroup>();
-                    if (_backgroundCanvasGroup.objectReferenceValue == null)
-                    {
-                        _backgroundCanvasGroup.objectReferenceValue = bg != null ? bg : null;
-                    }
-                    else if (bg != null && _backgroundCanvasGroup.objectReferenceValue != bg)
-                    {
-                        _backgroundCanvasGroup.objectReferenceValue = bg;
-                    }
-
-                    GUI.color = _backgroundCanvasGroup.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("CanvasGroup", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_backgroundCanvasGroup, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-            }
-
-            GUI.color = Color.white;
-            Uniform.SpaceOneLine();
-            Uniform.DrawUppercaseSection("UIPOPUP_SETTING_REF_CONTAINER", "CONTAINER", DrawReferenceContainerSetting);
-
-            void DrawReferenceContainerSetting()
-            {
-                if (_containerTransform != null)
-                {
-                    var container = popup.transform.Find("Container");
-                    if (_containerTransform.objectReferenceValue == null)
-                    {
-                        _containerTransform.objectReferenceValue = container != null ? container : null;
-                    }
-                    else if (container != null && _containerTransform.objectReferenceValue != container)
-                    {
-                        _containerTransform.objectReferenceValue = container;
-                    }
-
-                    GUI.color = _containerTransform.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Transform", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_containerTransform, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-
-                if (_containerCanvas != null)
-                {
-                    var container = popup.transform.Find("Container")?.GetComponent<Canvas>();
-                    if (_containerCanvas.objectReferenceValue == null)
-                    {
-                        _containerCanvas.objectReferenceValue = container != null ? container : null;
-                    }
-                    else if (container != null && _containerCanvas.objectReferenceValue != container)
-                    {
-                        _containerCanvas.objectReferenceValue = container;
-                    }
-
-                    GUI.color = _containerCanvas.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Canvas", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_containerCanvas, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-
-                if (_containerGraphicRaycaster != null)
-                {
-                    var container = popup.transform.Find("Container")?.GetComponent<GraphicRaycaster>();
-                    if (_containerGraphicRaycaster.objectReferenceValue == null)
-                    {
-                        _containerGraphicRaycaster.objectReferenceValue = container != null ? container : null;
-                    }
-                    else if (container != null && _containerGraphicRaycaster.objectReferenceValue != container)
-                    {
-                        _containerGraphicRaycaster.objectReferenceValue = container;
-                    }
-
-                    GUI.color = _containerGraphicRaycaster.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Graphic Raycaster", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_containerGraphicRaycaster, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
-
-                if (_containerCanvasGroup != null)
-                {
-                    var container = popup.transform.Find("Container")?.GetComponent<CanvasGroup>();
-                    if (_containerCanvasGroup.objectReferenceValue == null)
-                    {
-                        _containerCanvasGroup.objectReferenceValue = container != null ? container : null;
-                    }
-                    else if (container != null && _containerCanvasGroup.objectReferenceValue != container)
-                    {
-                        _containerCanvasGroup.objectReferenceValue = container;
-                    }
-
-                    GUI.color = _containerCanvasGroup.objectReferenceValue == null ? Uniform.InspectorNullError : Uniform.InspectorLock;
-                }
-
-                EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("Canvas Group", GUILayout.Width(DEFAULT_LABEL_WIDTH));
-                EditorGUILayout.ObjectField(_containerCanvasGroup, new GUIContent(""));
-                EditorGUILayout.EndHorizontal();
+                return flag;
             }
 
             EditorGUILayout.Space();

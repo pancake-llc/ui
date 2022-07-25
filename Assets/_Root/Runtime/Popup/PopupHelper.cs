@@ -6,6 +6,8 @@ namespace Pancake.UI
 {
     public static class PopupHelper
     {
+        public const string POPUP_LABEL = "ui_popup";
+        
         public static async Task<Button> SelectButton(CancellationToken token, params Button[] buttons)
         {
             var selected = false;

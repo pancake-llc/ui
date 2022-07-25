@@ -97,18 +97,18 @@ namespace Pancake.UIQuery.Editor
         private static (string Body, string TemplateName) GenerateTemplate(IMapper uiCache, UIStringElement[] stringElements)
         {
             var templateName = "DefaultTemplate";
-            var classNameTemplate = AnKuchenCopyTemplateSettings.DefaultClassName;
-            var targetTypesTemplate = AnKuchenCopyTemplateSettings.DefaultPickupComponentNames;
-            var removeText = AnKuchenCopyTemplateSettings.DefaultRemoveText;
+            var classNameTemplate = UICopyTemplateSettings.DefaultClassName;
+            var targetTypesTemplate = UICopyTemplateSettings.DefaultPickupComponentNames;
+            var removeText = UICopyTemplateSettings.DefaultRemoveText;
 
-            var guids = AssetDatabase.FindAssets($"t:{nameof(AnKuchenCopyTemplateSettings)}");
+            var guids = AssetDatabase.FindAssets($"t:{nameof(UICopyTemplateSettings)}");
             if (guids.Length > 0)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                var settings = AssetDatabase.LoadAssetAtPath<AnKuchenCopyTemplateSettings>(path);
+                var settings = AssetDatabase.LoadAssetAtPath<UICopyTemplateSettings>(path);
 
                 templateName = path;
-                classNameTemplate = settings.ClassName ?? AnKuchenCopyTemplateSettings.DefaultClassName;
+                classNameTemplate = settings.ClassName ?? UICopyTemplateSettings.DefaultClassName;
                 targetTypesTemplate = settings.PickupComponentNames ?? new string[] { };
                 removeText = settings.RemoveText ?? new string[] { };
             }
