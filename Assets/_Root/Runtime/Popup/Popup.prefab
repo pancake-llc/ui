@@ -278,15 +278,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 057760b2d0074ae797c8970b78329ac2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Elements:
-  - GameObject: {fileID: 4557100126515566504}
-    Path: 
-  - GameObject: {fileID: 6832601715917292197}
-    Path: 418c38fc
-  - GameObject: {fileID: 7055713959254023911}
-    Path: c4c936d8
-  - GameObject: {fileID: 860849020950121596}
-    Path: 1b9857c4c4c936d8
+  Elements: []
 --- !u!114 &6109269277399265472
 MonoBehaviour:
   m_ObjectHideFlags: 0

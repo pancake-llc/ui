@@ -97,10 +97,17 @@ namespace Pancake.UI.Editor
             }
             else
             {
-                if (PrefabUtility.IsPartOfAnyPrefab(popup.gameObject) && !IsAddressable())
+                if (PrefabUtility.IsPartOfAnyPrefab(popup.gameObject))
                 {
-                    Uniform.HelpBox("Click the toogle below to mark the popup as can be loaded by addressable", MessageType.Warning);
-                    if (GUILayout.Button("Mark Popup")) MarkPopup();
+                    if (!IsAddressable())
+                    {
+                        Uniform.HelpBox("Click the toogle below to mark the popup as can be loaded by addressable", MessageType.Warning);
+                        if (GUILayout.Button("Mark Popup")) MarkPopup();
+                    }
+                    else
+                    {
+                        Uniform.HelpBox("Marked as popup", MessageType.Info);
+                    }
                 }
 
                 Uniform.DrawUppercaseSection("UIPOPUP_CLOSE", "CLOSE BY", DrawCloseSetting);
@@ -283,13 +290,9 @@ namespace Pancake.UI.Editor
                 var settings = AddressableAssetSettingsDefaultObject.Settings;
                 if (!settings.GetLabels().Contains(PopupHelper.POPUP_LABEL)) settings.AddLabel(PopupHelper.POPUP_LABEL);
                 AddressableAssetGroup group = settings.FindGroup("Default Local Group");
-                var path = AssetDatabase.GetAssetPath(popup.gameObject);
+                var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(popup.gameObject);
                 var guid = AssetDatabase.AssetPathToGUID(path);
-                if (string.IsNullOrEmpty(guid))
-                {
-                    Debug.Log("NULL");
-                    return;
-                }
+                if (string.IsNullOrEmpty(guid)) return;
                 var entry = settings.CreateOrMoveEntry(guid, group);
                 
                 if (!entry.labels.Contains(PopupHelper.POPUP_LABEL))  entry.labels.Add(PopupHelper.POPUP_LABEL);
@@ -305,8 +308,7 @@ namespace Pancake.UI.Editor
                 var settings = AddressableAssetSettingsDefaultObject.Settings;
                 if (settings.GetLabels().Contains(PopupHelper.POPUP_LABEL)) settings.AddLabel(PopupHelper.POPUP_LABEL);
                 AddressableAssetGroup group = settings.FindGroup("Default Local Group");
-                var obj = PrefabUtility.GetCorrespondingObjectFromOriginalSource(popup.gameObject);
-                var path = AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromOriginalSource(popup.gameObject));
+                var path = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(popup.gameObject);
                 var guid = AssetDatabase.AssetPathToGUID(path);
 
                 AddressableAssetEntry entry = null;
