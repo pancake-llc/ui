@@ -77,14 +77,13 @@ namespace Pancake.UI.Editor
 
         public override void OnInspectorGUI()
         {
-            var prevColor = GUI.color;
             serializedObject.Update();
             EditorGUIUtility.labelWidth = 110;
 
             bool updateCacheUI = false;
             try
             {
-                var backgroundTransform = uiCache.Get<RectTransform>("Background");
+                var _ = uiCache.Get<RectTransform>("Background");
             }
             catch (Exception)
             {
@@ -109,7 +108,12 @@ namespace Pancake.UI.Editor
                         Uniform.HelpBox("Marked as popup", MessageType.Info);
                     }
                 }
-
+                Uniform.SpaceOneLine();
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Label("Ignore Time Scale", GUILayout.Width(DEFAULT_LABEL_WIDTH));
+                _ignoreTimeScale.boolValue = GUILayout.Toggle(_ignoreTimeScale.boolValue, "");
+                EditorGUILayout.EndHorizontal();
+                Uniform.SpaceOneLine();
                 Uniform.DrawUppercaseSection("UIPOPUP_CLOSE", "CLOSE BY", DrawCloseSetting);
                 Uniform.SpaceOneLine();
                 Uniform.DrawUppercaseSection("UIPOPUP_SETTING_DISPLAY", "DISPLAY", DrawDisplaySetting);
@@ -139,7 +143,7 @@ namespace Pancake.UI.Editor
                 if (backgroundTransform != null)
                 {
                     backgroundTransform.TryGetComponent<Button>(out var btn);
-                    if (popup.CloseByClickBackground)
+                    if (_closeByClickBackground.boolValue)
                     {
                         if (btn == null) btn = AddBlankButtonComponent(backgroundTransform.gameObject);
                         if (!popup.CloseButtons.Contains(btn)) popup.CloseButtons.Add(btn);
@@ -158,7 +162,7 @@ namespace Pancake.UI.Editor
                 if (containerTransform != null)
                 {
                     containerTransform.TryGetComponent<Button>(out var btn);
-                    if (popup.CloseByClickContainer)
+                    if (_closeByClickContainer.boolValue)
                     {
                         if (btn == null) btn = AddBlankButtonComponent(containerTransform.gameObject);
                         if (!popup.CloseButtons.Contains(btn)) popup.CloseButtons.Add(btn);
