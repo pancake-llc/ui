@@ -33,14 +33,14 @@ namespace Pancake.UIQuery
             {
                 return Get(hash);
             }
-            catch (AnKuchenNotFoundException e)
+            catch (UINotFoundException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotFoundException(objectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotFoundException(objectPath, e.Type);
                 throw;
             }
-            catch (AnKuchenNotUniqueException e)
+            catch (UINotUniqueException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotUniqueException(objectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotUniqueException(objectPath, e.Type);
                 throw;
             }
         }
@@ -48,8 +48,8 @@ namespace Pancake.UIQuery
         public GameObject Get(uint[] objectPath)
         {
             var target = GetInternal(objectPath);
-            if (target.Length == 0) throw new AnKuchenNotFoundException(objectPath, null);
-            if (target.Length > 1) throw new AnKuchenNotUniqueException(objectPath, null);
+            if (target.Length == 0) throw new UINotFoundException(objectPath, null);
+            if (target.Length > 1) throw new UINotUniqueException(objectPath, null);
             return target.Length > 0 ? target[0].GameObject : null;
         }
 
@@ -71,14 +71,14 @@ namespace Pancake.UIQuery
             {
                 return Get<T>(hash);
             }
-            catch (AnKuchenNotFoundException e)
+            catch (UINotFoundException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotFoundException(objectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotFoundException(objectPath, e.Type);
                 throw;
             }
-            catch (AnKuchenNotUniqueException e)
+            catch (UINotUniqueException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotUniqueException(objectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotUniqueException(objectPath, e.Type);
                 throw;
             }
         }
@@ -86,11 +86,11 @@ namespace Pancake.UIQuery
         public T Get<T>(uint[] objectPath) where T : Component
         {
             var target = GetInternal(objectPath);
-            if (target.Length == 0) throw new AnKuchenNotFoundException(objectPath, typeof(T));
-            if (target.Length > 1) throw new AnKuchenNotUniqueException(objectPath, typeof(T));
+            if (target.Length == 0) throw new UINotFoundException(objectPath, typeof(T));
+            if (target.Length > 1) throw new UINotUniqueException(objectPath, typeof(T));
 
             var component = target[0].GameObject.GetComponent<T>();
-            if (component == null) throw new AnKuchenNotFoundException(objectPath, typeof(T));
+            if (component == null) throw new UINotFoundException(objectPath, typeof(T));
             return component;
         }
 
@@ -101,14 +101,14 @@ namespace Pancake.UIQuery
             {
                 return GetChild<T>(hash);
             }
-            catch (AnKuchenNotFoundException e)
+            catch (UINotFoundException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotFoundException(rootObjectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotFoundException(rootObjectPath, e.Type);
                 throw;
             }
-            catch (AnKuchenNotUniqueException e)
+            catch (UINotUniqueException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotUniqueException(rootObjectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotUniqueException(rootObjectPath, e.Type);
                 throw;
             }
         }
@@ -120,14 +120,14 @@ namespace Pancake.UIQuery
             {
                 newMapper = GetMapper(rootObjectPath);
             }
-            catch (AnKuchenNotFoundException e)
+            catch (UINotFoundException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(rootObjectPath)) throw new AnKuchenNotFoundException(rootObjectPath, typeof(T));
+                if (e.PathHash != null && e.PathHash.SequenceEqual(rootObjectPath)) throw new UINotFoundException(rootObjectPath, typeof(T));
                 throw;
             }
-            catch (AnKuchenNotUniqueException e)
+            catch (UINotUniqueException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(rootObjectPath)) throw new AnKuchenNotUniqueException(rootObjectPath, typeof(T));
+                if (e.PathHash != null && e.PathHash.SequenceEqual(rootObjectPath)) throw new UINotUniqueException(rootObjectPath, typeof(T));
                 throw;
             }
 
@@ -143,14 +143,14 @@ namespace Pancake.UIQuery
             {
                 return GetMapper(hash);
             }
-            catch (AnKuchenNotFoundException e)
+            catch (UINotFoundException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotFoundException(rootObjectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotFoundException(rootObjectPath, e.Type);
                 throw;
             }
-            catch (AnKuchenNotUniqueException e)
+            catch (UINotUniqueException e)
             {
-                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new AnKuchenNotUniqueException(rootObjectPath, e.Type);
+                if (e.PathHash != null && e.PathHash.SequenceEqual(hash)) throw new UINotUniqueException(rootObjectPath, e.Type);
                 throw;
             }
         }
@@ -158,8 +158,8 @@ namespace Pancake.UIQuery
         public IMapper GetMapper(uint[] rootObjectPath)
         {
             var target = GetInternal(rootObjectPath);
-            if (target.Length == 0) throw new AnKuchenNotFoundException(rootObjectPath, null);
-            if (target.Length > 1) throw new AnKuchenNotUniqueException(rootObjectPath, null);
+            if (target.Length == 0) throw new UINotFoundException(rootObjectPath, null);
+            if (target.Length > 1) throw new UINotUniqueException(rootObjectPath, null);
 
             var pathElements = target[0].Path.Reverse().ToArray();
             var result = new List<CachedObject>();

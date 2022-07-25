@@ -2,7 +2,6 @@
 <#@ import namespace="System.Linq" #>
 <#@ assembly name="System.Core" #>
 using System;
-using AnKuchen.Map;
 
 namespace Pancake.UIQuery
 {

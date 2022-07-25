@@ -30,20 +30,20 @@ namespace Pancake.UIQuery
         void Initialize(IMapper mapper);
     }
 
-    public abstract class AnKuchenException : Exception
+    public abstract class UIException : Exception
     {
-        protected AnKuchenException(string message) : base(message)
+        protected UIException(string message) : base(message)
         {
         }
     }
 
-    public class AnKuchenNotFoundException : AnKuchenException
+    public class UINotFoundException : UIException
     {
         public string PathString { get; }
         public uint[] PathHash { get; }
         public Type Type { get; }
 
-        public AnKuchenNotFoundException(uint[] pathHash, Type type) : base(
+        public UINotFoundException(uint[] pathHash, Type type) : base(
             type == null
                 ? $"[{string.Join(", ", pathHash)}] is not found"
                 : $"[{string.Join(", ", pathHash)}]<{type}> is not found"
@@ -54,7 +54,7 @@ namespace Pancake.UIQuery
             Type = type;
         }
 
-        public AnKuchenNotFoundException(string pathString, Type type) : base(
+        public UINotFoundException(string pathString, Type type) : base(
             type == null
                 ? $"{pathString} is not found"
                 : $"{pathString}<{type}> is not found"
@@ -66,13 +66,13 @@ namespace Pancake.UIQuery
         }
     }
 
-    public class AnKuchenNotUniqueException : AnKuchenException
+    public class UINotUniqueException : UIException
     {
         public string PathString { get; }
         public uint[] PathHash { get; }
         public Type Type { get; }
 
-        public AnKuchenNotUniqueException(uint[] pathHash, Type type) : base(
+        public UINotUniqueException(uint[] pathHash, Type type) : base(
             type == null
                 ? $"[{string.Join(", ", pathHash)}] is not unique"
                 : $"[{string.Join(", ", pathHash)}]<{type}> is not unique"
@@ -83,7 +83,7 @@ namespace Pancake.UIQuery
             Type = type;
         }
 
-        public AnKuchenNotUniqueException(string pathString, Type type) : base(
+        public UINotUniqueException(string pathString, Type type) : base(
             type == null
                 ? $"{pathString} is not unique"
                 : $"{pathString}<{type}> is not unique"

@@ -24,18 +24,18 @@ namespace Pancake.UIQuery.Editor
             base.OnInspectorGUI();
         }
 
-        private const string MenuItemName = "GameObject/Copy AnKuchen Template";
-        private const int MenuItemPriority = 48;
+        private const string MENU_ITEM_NAME = "GameObject/Pancake/Copy UI Template";
+        private const int MENU_ITEM_PRIORITY = -1000;
 
-        [MenuItem(MenuItemName, true, MenuItemPriority)]
-        public static bool CopyAnKuchenTemplateValidate()
+        [MenuItem(MENU_ITEM_NAME, true, MENU_ITEM_PRIORITY)]
+        public static bool UITemplateValidate()
         {
             if (Selection.activeGameObject == null) return false;
             return Selection.activeGameObject.GetComponentInParent<UICache>() != null;
         }
 
-        [MenuItem(MenuItemName, false, MenuItemPriority)]
-        public static void CopyAnKuchenTemplate()
+        [MenuItem(MENU_ITEM_NAME, false, MENU_ITEM_PRIORITY)]
+        public static void CopyUITemplate()
         {
             var target = Selection.activeGameObject;
             var stringElements = CreateStringCache(target.transform);
