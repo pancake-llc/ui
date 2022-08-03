@@ -4,6 +4,8 @@ using UnityEditor;
 using System.Reflection;
 using System;
 using Object = UnityEngine.Object;
+// ReSharper disable InconsistentNaming
+// ReSharper disable FieldCanBeMadeReadOnly.Local
 
 namespace Pancake.Toolbar 
 {

@@ -1,4 +1,5 @@
-﻿namespace Pancake.Toolbar
+﻿#if UNITY_EDITOR
+namespace Pancake.Toolbar
 {
     using System.Collections.Generic;
     using System.IO;
@@ -11,7 +12,7 @@
     using UnityEngine.UIElements;
 
 
-// ReSharper disable InconsistentNaming
+    // ReSharper disable InconsistentNaming
     public static class SceneToolbar
     {
         public static readonly List<string> ScenePaths = new();
@@ -45,9 +46,8 @@
         public const string OverlayID = "scene-tool_extend-overlay";
 
         private SceneToolbarOverlay()
-            : base(SceneDropdown.ID, PlayModePlayToggle.ID, PlayModePauseToggle.ID,PlayModeStepButton.ID)
+            : base(SceneDropdown.ID, PlayModePlayToggle.ID, PlayModePauseToggle.ID, PlayModeStepButton.ID)
         {
-
         }
 
         public override void OnCreated()
@@ -231,3 +231,4 @@
         private void ButtonCallback(ClickEvent evt) { EditorApplication.Step(); }
     }
 }
+#endif
