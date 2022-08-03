@@ -11,10 +11,10 @@ namespace Pancake.Toolbar
     {
         const BindingFlags AnyBind = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
-        static Type mainViewT = EditorUtil.Asm.GetType("UnityEditor.MainView");
+        static Type mainViewT = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.MainView");
         static Type viewT = mainViewT.BaseType;
-        static Type appBarT = EditorUtil.Asm.GetType("UnityEditor.AppStatusBar");
-        static Type toolbarT = EditorUtil.Asm.GetType("UnityEditor.Toolbar");
+        static Type appBarT = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.AppStatusBar");
+        static Type toolbarT = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.Toolbar");
         static FieldInfo m_UseTopView = mainViewT.GetField("m_UseTopView", AnyBind);
         static FieldInfo m_TopViewHeight = mainViewT.GetField("m_TopViewHeight", AnyBind);
         static FieldInfo m_UseBottomView = mainViewT.GetField("m_UseBottomView", AnyBind);
@@ -25,8 +25,8 @@ namespace Pancake.Toolbar
         static PropertyInfo windowPosition = mainViewT.GetProperty("windowPosition", AnyBind);
         static PropertyInfo position = viewT.GetProperty("position", AnyBind);
 
-        const string ToggleMainToolbarPath = "Tools/Toolbars/Main Toolbar";
-        const string ToggleAppStatusBarPath = "Tools/Toolbars/Status Bar";
+        const string ToggleMainToolbarPath = "Tools/Toolbars/Main Toolbar %&-";
+        const string ToggleAppStatusBarPath = "Tools/Toolbars/Status Bar %&=";
 
         public static bool isMainToolbarEnabled => Resources.FindObjectsOfTypeAll(toolbarT).Length != 0;
         public static bool isAppStatusBarEnabled => Resources.FindObjectsOfTypeAll(appBarT).Length != 0;
@@ -39,7 +39,7 @@ namespace Pancake.Toolbar
         [MenuItem(ToggleMainToolbarPath)]
         public static void ToggleMainToolbar()
         {
-            EditorApplication.delayCall += EditorViewModule.RefreshAllModules;
+            //EditorApplication.delayCall += EditorViewModule.RefreshAllModules;
             var exist = Resources.FindObjectsOfTypeAll(toolbarT).Length != 0;
             var mainView = Resources.FindObjectsOfTypeAll(mainViewT)[0];
 
@@ -69,7 +69,7 @@ namespace Pancake.Toolbar
         [MenuItem(ToggleAppStatusBarPath)]
         public static void ToggleAppStatusBar()
         {
-            EditorApplication.delayCall += EditorViewModule.RefreshAllModules;
+            //EditorApplication.delayCall += EditorViewModule.RefreshAllModules;
             var exist = Resources.FindObjectsOfTypeAll(appBarT).Length != 0;
             var mainView = Resources.FindObjectsOfTypeAll(mainViewT)[0];
 
@@ -84,7 +84,7 @@ namespace Pancake.Toolbar
                 pos.height = 20;
                 position.SetValue(toolbar, pos);
                 UpdateMainViewPosition(mainView);
-                EditorViewModule.RefreshAllModules();
+                //EditorViewModule.RefreshAllModules();
                 return;
             }
             var bar = Resources.FindObjectsOfTypeAll(appBarT)[0];
